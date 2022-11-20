@@ -1,14 +1,13 @@
 # docker-manifest-create-action [![ts](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml/badge.svg)](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml)
 
-This is an action to create a multi-architecture image in GitHub Actions.
+This is an action to create a multi-architecture Docker image in GitHub Actions.
 It is interoperable with [docker/build-push-action](https://github.com/docker/build-push-action) and [docker/metadata-action](https://github.com/docker/metadata-action).
 
 ## Purpose
 
-[docker/build-push-action](https://github.com/docker/build-push-action) command supports multiple platforms,
-but it takes a long time to build multiple platforms in a single job.
+When we build a multi-architecture image using [docker/build-push-action](https://github.com/docker/build-push-action), it takes a long time to build all platforms in a single job.
 
-It would be nice to build images in parallel jobs, and finally create a multi-architecture image.
+It would be nice to build images in parallel jobs and finally create a multi-architecture image.
 
 ```mermaid
 graph LR
@@ -112,13 +111,14 @@ Here is a diagram of this workflow:
 
 ```mermaid
 graph TB
-  amd64[build linux/amd64] --> build-multi-architecture
-  arm64[build linux/arm64] --> build-multi-architecture
-  build-multi-architecture
+  subgraph Workflow
+    amd64[build linux/amd64] --> build-multi-architecture
+    arm64[build linux/arm64] --> build-multi-architecture
+    build-multi-architecture
+  end
 ```
 
-By the default behavior of [docker/metadata-action](https://github.com/docker/metadata-action),
-when `v1.0.0` tag is pushed, `build` job creates the following images:
+When `v1.0.0` tag is pushed, `build` job creates the following images by default of [docker/metadata-action](https://github.com/docker/metadata-action):
 
 - `ghcr.io/owner/repo:v1.0.0-linux-amd64`
 - `ghcr.io/owner/repo:v1.0.0-linux-arm64`
