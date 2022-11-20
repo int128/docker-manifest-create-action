@@ -3,7 +3,8 @@ import { run } from './run'
 
 const main = async (): Promise<void> => {
   await run({
-    name: core.getInput('name', { required: true }),
+    tags: core.getMultilineInput('tags', { required: true }),
+    suffixes: core.getMultilineInput('suffixes', { required: true }),
   })
 }
 
