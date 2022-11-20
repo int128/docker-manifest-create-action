@@ -1,66 +1,38 @@
 # docker-manifest-create-action [![ts](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml/badge.svg)](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml)
 
 This is an action to create a multi-architecture image in GitHub Actions.
-It runs [`docker manifest`](https://docs.docker.com/engine/reference/commandline/manifest/) commands.
+It is interoperable with [docker/build-push-action](https://github.com/docker/build-push-action) and [docker/metadata-action](https://github.com/docker/metadata-action).
 
 ## Purpose
 
-[`docker buildx build`](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform) command supports multiple platforms, but it takes a long time to build multiple platforms in a single job.
+[docker/build-push-action](https://github.com/docker/build-push-action) command supports multiple platforms,
+but it takes a long time to build multiple platforms in a single job.
 
-It would be nice to build multiple images for platforms in parallel.
-For example,
+It would be nice to build images in parallel jobs, and finally create a multi-architecture image.
 
-```yaml
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-    steps:
-      - uses: docker/metadata-action@v4
-        id: metadata
-        with:
-          images: ghcr.io/int128/example
-          flavor: suffix=-${{ matrix.platform }}
-      - uses: docker/setup-buildx-action@v2
-      - uses: docker/build-push-action@v3
-        with:
-          tags: ${{ steps.metadata.outputs.tags }}
-          platforms: ${{ matrix.platform }}
+```mermaid
+graph LR
+  m[Image ghcr.io/owner/repo:tag]
+  amd64[Image ghcr.io/owner/repo:tag-linux-amd64] --> m
+  arm64[Image ghcr.io/owner/repo:tag-linux-arm64] --> m
+  ppc64le[Image ghcr.io/owner/repo:tag-linux-ppc64le] --> m
 ```
 
-When `v1.0.0` tag is pushed, the build job will create the following images:
+This action runs the following commands to create a multi-architecture image:
 
-- `ghcr.io/int128/example:v1.0.0-linux-amd64`
-- `ghcr.io/int128/example:v1.0.0-linux-arm64`
-- `ghcr.io/int128/example:latest-linux-amd64`
-- `ghcr.io/int128/example:latest-linux-arm64`
+- [`docker manifest create`](https://docs.docker.com/engine/reference/commandline/manifest_create/)
+- [`docker manifest push`](https://docs.docker.com/engine/reference/commandline/manifest_push/)
 
-This is the default behavior of [docker/metadata-action](https://github.com/docker/metadata-action) and you can change it.
-
-After the build job, create a multi-architecture image from all images.
-For example,
+For example, when `ghcr.io/owner/repo:tag` and `[amd64, arm64]` are given, this action runs these commands:
 
 ```sh
-docker manifest create ghcr.io/int128/example:v1.0.0 \
-  ghcr.io/int128/example:v1.0.0-amd64 \
-  ghcr.io/int128/example:v1.0.0-arm64
+# create a manifest of multi-architecture image
+docker manifest create ghcr.io/owner/repo:tag \
+  ghcr.io/owner/repo:tag-amd64 \
+  ghcr.io/owner/repo:tag-arm64
 
-docker manifest push ghcr.io/int128/example:v1.0.0
-```
-
-This action allows it by a simple step without any scripting.
-
-```yaml
-      - uses: int128/docker-manifest-create-action@v1
-        with:
-          tags: ${{ steps.metadata.outputs.tags }}
-          suffixes: |
-            -linux-amd64
-            -linux-arm64
+# push the manifest to the remote repository
+docker manifest push owner/repo:tag
 ```
 
 See also the following docs:
@@ -125,7 +97,29 @@ jobs:
             -linux-arm64
 ```
 
-See also [the full example of e2e test](.github/workflows/e2e.yaml).
+Here is a diagram of jobs:
+
+```mermaid
+graph TB
+  amd64[build linux/amd64] --> build-multi-architecture
+  arm64[build linux/arm64] --> build-multi-architecture
+  build-multi-architecture
+```
+
+By the default behavior of [docker/metadata-action](https://github.com/docker/metadata-action),
+when `v1.0.0` tag is pushed, `build` job creates the following images:
+
+- `ghcr.io/owner/repo:v1.0.0-linux-amd64`
+- `ghcr.io/owner/repo:v1.0.0-linux-arm64`
+- `ghcr.io/owner/repo:latest-linux-amd64`
+- `ghcr.io/owner/repo:latest-linux-arm64`
+
+Finally, `build-multi-architecture` job creates the following images:
+
+- `ghcr.io/owner/repo:v1.0.0`
+- `ghcr.io/owner/repo:latest`
+
+See also [the workflow of e2e test](.github/workflows/e2e.yaml) with cache options.
 
 ## Specification
 
@@ -139,3 +133,12 @@ See also [the full example of e2e test](.github/workflows/e2e.yaml).
 ### Outputs
 
 Nothing.
+
+### Behavior
+
+This action runs the following commands for each tag.
+
+```sh
+docker manifest create {tag} {tag}{suffix}...
+docker manifest push {tag}
+```
