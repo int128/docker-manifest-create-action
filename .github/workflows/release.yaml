@@ -23,6 +23,3 @@ jobs:
       - run: yarn build
       - run: yarn package
       - uses: int128/release-typescript-action@v1
-        with:
-          # TODO: change this on the stable release
-          major-version: 0
