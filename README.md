@@ -1,103 +1,141 @@
-# typescript-action [![ts](https://github.com/int128/typescript-action/actions/workflows/ts.yaml/badge.svg)](https://github.com/int128/typescript-action/actions/workflows/ts.yaml)
+# docker-manifest-create-action [![ts](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml/badge.svg)](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml)
 
-This is a template of TypeScript action.
-Inspired from https://github.com/actions/typescript-action.
+This is an action to create a multi-architecture image in GitHub Actions.
+It runs [`docker manifest`](https://docs.docker.com/engine/reference/commandline/manifest/) commands.
 
+## Purpose
 
-## Features
+[`docker buildx build`](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform) command supports multiple platforms, but it takes a long time to build multiple platforms in a single job.
 
-- Ready to develop with the minimum configs
-  - Yarn
-  - Prettier
-  - ESLint
-  - tsconfig
-  - Jest
-- Automated continuous release
-- Keep consistency of generated files
-- Shipped with Renovate config
-
-
-## Getting Started
-
-Click `Use this template` to create a repository.
-
-An initial release `v0.0.0` is automatically created by GitHub Actions.
-You can see the generated files in `dist` directory on the tag.
-
-Then checkout your repository and test it. Node.js is required.
-
-```console
-$ git clone https://github.com/your/repo.git
-
-$ yarn
-$ yarn test
-```
-
-Create a pull request for a change.
-
-```console
-$ git checkout -b feature
-$ git commit -m 'Add feature'
-$ gh pr create -fd
-```
-
-Once you merge a pull request, a new minor release (such as `v0.1.0`) is created.
-
-
-### Stable release
-
-When you want to create a stable release, change the major version in [release workflow](.github/workflows/release.yaml).
-
-```yaml
-      - uses: int128/release-typescript-action@v1
-        with:
-          major-version: 1
-```
-
-Then a new stable release `v1.0.0` is created.
-
-
-## Specification
-
-To run this action, create a workflow as follows:
+It would be nice to build multiple images for platforms in parallel.
+For example,
 
 ```yaml
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
     steps:
-      - uses: int128/typescript-action@v1
+      - uses: docker/metadata-action@v4
+        id: metadata
         with:
-          name: hello
+          images: ghcr.io/int128/example
+          flavor: suffix=-${{ matrix.platform }}
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/build-push-action@v3
+        with:
+          tags: ${{ steps.metadata.outputs.tags }}
+          platforms: ${{ matrix.platform }}
 ```
+
+When `v1.0.0` tag is pushed, the build job will create the following images:
+
+- `ghcr.io/int128/example:v1.0.0-linux-amd64`
+- `ghcr.io/int128/example:v1.0.0-linux-arm64`
+- `ghcr.io/int128/example:latest-linux-amd64`
+- `ghcr.io/int128/example:latest-linux-arm64`
+
+This is the default behavior of [docker/metadata-action](https://github.com/docker/metadata-action) and you can change it.
+
+After the build job, create a multi-architecture image from all images.
+For example,
+
+```sh
+docker manifest create ghcr.io/int128/example:v1.0.0 \
+  ghcr.io/int128/example:v1.0.0-amd64 \
+  ghcr.io/int128/example:v1.0.0-arm64
+
+docker manifest push ghcr.io/int128/example:v1.0.0
+```
+
+This action allows it by a simple step without any scripting.
+
+```yaml
+      - uses: int128/docker-manifest-create-action@v1
+        with:
+          tags: ${{ steps.metadata.outputs.tags }}
+          suffixes: |
+            -linux-amd64
+            -linux-arm64
+```
+
+See also the following docs:
+
+- [Create and push a manifest list](https://docs.docker.com/engine/reference/commandline/manifest/#create-and-push-a-manifest-list) (Docker)
+- [Pushing a multi-architecture image](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html) (Amazon ECR)
+
+## Getting Started
+
+Here is an example of workflow to build a multi-architecture image for `amd64` and `arm64`.
+
+```yaml
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v4
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: suffix=-${{ matrix.platform }}
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          platforms: ${{ matrix.platform }}
+
+  build-multi-architecture:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v4
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}
+      - uses: int128/docker-manifest-create-action@v1
+        with:
+          tags: ${{ steps.metadata.outputs.tags }}
+          suffixes: |
+            -linux-amd64
+            -linux-arm64
+```
+
+See also [the full example of e2e test](.github/workflows/e2e.yaml).
+
+## Specification
 
 ### Inputs
 
 | Name | Default | Description
 |------|----------|------------
-| `name` | (required) | example input
-
+| `tags` | (required) | tags of destination images (multi-line string)
+| `suffixes` | (required) | suffixes of source images (multi-line string)
 
 ### Outputs
 
-| Name | Description
-|------|------------
-| `example` | example output
-
-
-## Development
-
-### Release workflow
-
-When a pull request is merged into main branch, a new minor release is created by GitHub Actions.
-See https://github.com/int128/release-typescript-action for details.
-
-### Keep consistency of generated files
-
-If a pull request needs to be fixed by Prettier, an additional commit to fix it will be added by GitHub Actions.
-See https://github.com/int128/update-generated-files-action for details.
-
-### Dependency update
-
-You can enable Renovate to update the dependencies.
-This repository is shipped with the config https://github.com/int128/typescript-action-renovate-config.
+Nothing.
