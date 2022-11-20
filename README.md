@@ -23,13 +23,24 @@ This action runs the following commands to create a multi-architecture image:
 - [`docker manifest create`](https://docs.docker.com/engine/reference/commandline/manifest_create/)
 - [`docker manifest push`](https://docs.docker.com/engine/reference/commandline/manifest_push/)
 
-For example, when `ghcr.io/owner/repo:tag` and `[amd64, arm64]` are given, this action runs these commands:
+For example, when the following inputs are given,
+
+```yaml
+tags: ghcr.io/owner/repo:tag
+suffixes: |
+  -linux-amd64
+  -linux-arm64
+  -linux-ppc64le
+```
+
+this action runs the following commands:
 
 ```sh
 # create a manifest of multi-architecture image
 docker manifest create ghcr.io/owner/repo:tag \
-  ghcr.io/owner/repo:tag-amd64 \
-  ghcr.io/owner/repo:tag-arm64
+  ghcr.io/owner/repo:tag-linux-amd64 \
+  ghcr.io/owner/repo:tag-linux-arm64 \
+  ghcr.io/owner/repo:tag-linux-ppc64le
 
 # push the manifest to the remote repository
 docker manifest push owner/repo:tag
@@ -97,7 +108,7 @@ jobs:
             -linux-arm64
 ```
 
-Here is a diagram of jobs:
+Here is a diagram of this workflow:
 
 ```mermaid
 graph TB
