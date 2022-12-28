@@ -3,15 +3,13 @@ import * as exec from '@actions/exec'
 
 type Inputs = {
   tags: string[]
+  digests: string[]
   suffixes: string[]
 }
 
 export const run = async (inputs: Inputs): Promise<void> => {
-  if (inputs.suffixes.length < 1) {
-    throw new Error(`one or more suffixes must be set`)
-  }
   for (const tag of inputs.tags) {
-    const sourceManifests = getSourceManifests(tag, inputs.suffixes)
+    const sourceManifests = getSourceManifests(tag, inputs)
     await exec.exec('docker', ['manifest', 'create', tag, ...sourceManifests])
     await exec.exec('docker', ['manifest', 'push', tag])
     await exec.exec('docker', ['manifest', 'inspect', tag])
@@ -19,4 +17,13 @@ export const run = async (inputs: Inputs): Promise<void> => {
   }
 }
 
-export const getSourceManifests = (tag: string, suffixes: string[]) => suffixes.map((suffix) => `${tag}${suffix}`)
+export const getSourceManifests = (tag: string, inputs: Pick<Inputs, 'digests' | 'suffixes'>) => {
+  if (inputs.digests.length > 0) {
+    const repository = tag.replace(/:.+?$/, '')
+    return inputs.digests.map((suffix) => `${repository}@${suffix}`)
+  }
+  if (inputs.suffixes.length > 0) {
+    return inputs.suffixes.map((suffix) => `${tag}${suffix}`)
+  }
+  throw new Error(`either digests or suffixes must be set`)
+}
