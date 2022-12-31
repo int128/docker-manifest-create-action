@@ -40,7 +40,8 @@ jobs:
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}/e2e
-          flavor: suffix=-${{ matrix.platform }}
+          # avoid overwriting the latest tag because metadata-action does not add a suffix to it
+          flavor: latest=false,suffix=-${{ matrix.platform }}
       - uses: int128/docker-build-cache-config-action@v1
         id: cache
         with:
