@@ -20,7 +20,10 @@ export const run = async (inputs: Inputs): Promise<void> => {
     core.info(`Pushed a manifest ${tag}`)
   }
 
-  if (latestTag && nonLatestTags.length > 0) {
+  if (latestTag) {
+    if (nonLatestTags.length === 0) {
+      throw new Error(`when latest tag is given, also non-latest tag must be given`)
+    }
     const sourceManifest = nonLatestTags[0]
     await dockerManifestCreatePush(latestTag, [sourceManifest])
     core.info(`Pushed a manifest ${latestTag}`)
