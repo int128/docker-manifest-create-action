@@ -36,6 +36,8 @@ describe('run', () => {
       ],
       suffixes: ['-amd64'],
     })
+
+    // non-latest tag
     expect(exec.exec).toHaveBeenCalledWith('docker', [
       'manifest',
       'create',
@@ -53,11 +55,12 @@ describe('run', () => {
       'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
     ])
 
+    // latest tag
     expect(exec.exec).toHaveBeenCalledWith('docker', [
       'manifest',
       'create',
       'ghcr.io/int128/docker-manifest-create-action:latest',
-      'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0-amd64',
     ])
     expect(exec.exec).toHaveBeenCalledWith('docker', [
       'manifest',

@@ -24,8 +24,9 @@ export const run = async (inputs: Inputs): Promise<void> => {
     if (nonLatestTags.length === 0) {
       throw new Error(`when latest tag is given, also non-latest tag must be given`)
     }
-    const sourceManifest = nonLatestTags[0]
-    await dockerManifestCreatePush(latestTag, [sourceManifest])
+    const nonLatestTag = nonLatestTags[0]
+    const sourceManifests = getSourceManifests(nonLatestTag, inputs.suffixes)
+    await dockerManifestCreatePush(latestTag, sourceManifests)
     core.info(`Pushed a manifest ${latestTag}`)
   }
 }
