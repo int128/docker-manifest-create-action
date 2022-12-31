@@ -5,9 +5,12 @@ inputs:
   tags:
     description: tags of destination images (multi-line string)
     required: true
+  digests:
+    description: digests of source images (comma separated)
+    required: false
   suffixes:
     description: suffixes of source images (multi-line string)
-    required: true
+    required: false
 
 runs:
   using: 'node16'

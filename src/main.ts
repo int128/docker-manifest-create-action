@@ -4,7 +4,8 @@ import { run } from './run'
 const main = async (): Promise<void> => {
   await run({
     tags: core.getMultilineInput('tags', { required: true }),
-    suffixes: core.getMultilineInput('suffixes', { required: true }),
+    digests: core.getInput('digests').split(/\s*,\s*/),
+    suffixes: core.getMultilineInput('suffixes'),
   })
 }
 
