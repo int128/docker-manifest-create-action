@@ -75,7 +75,8 @@ jobs:
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}
-          flavor: suffix=-${{ matrix.platform }}
+          # avoid overwriting the latest tag because metadata-action does not add a suffix to it
+          flavor: latest=false,suffix=-${{ matrix.platform }}
       - uses: docker/setup-buildx-action@v2
       - uses: docker/build-push-action@v3
         with:
@@ -118,19 +119,35 @@ graph TB
   end
 ```
 
+See also [the full example of e2e-test](.github/workflows/e2e.yaml) with cache options.
+
+### For branches
+
+When `main` branch is pushed, `build` job creates the following images by default of [docker/metadata-action](https://github.com/docker/metadata-action):
+
+- `ghcr.io/owner/repo:main-linux-amd64`
+- `ghcr.io/owner/repo:main-linux-arm64`
+
+Then, `build-multi-architecture` job creates the following image:
+
+- `ghcr.io/owner/repo:main`
+
+### For tags
+
 When `v1.0.0` tag is pushed, `build` job creates the following images by default of [docker/metadata-action](https://github.com/docker/metadata-action):
 
 - `ghcr.io/owner/repo:v1.0.0-linux-amd64`
 - `ghcr.io/owner/repo:v1.0.0-linux-arm64`
-- `ghcr.io/owner/repo:latest-linux-amd64`
-- `ghcr.io/owner/repo:latest-linux-arm64`
+
+Because docker/metadata-action does not add a suffix to `latest` tag,
+it needs to set `latest=false` to avoid overwriting `latest` tag for each build.
 
 Finally, `build-multi-architecture` job creates the following images:
 
 - `ghcr.io/owner/repo:v1.0.0`
 - `ghcr.io/owner/repo:latest`
 
-See also [the workflow of e2e test](.github/workflows/e2e.yaml) with cache options.
+If `latest` tag is given, this action pushes it from the non-latest tag.
 
 ### For self-hosted runners
 
