@@ -66,25 +66,9 @@ jobs:
           outputs: |-
             digest: ${{ steps.build.outputs.digest }}
 
-  read:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: cloudposse/github-action-matrix-outputs-read@main
-        id: read
-        with:
-          matrix-step-name: build
-      - name: map to array
-        id: array
-        run: |
-          result="$(echo '${{ steps.read.outputs.result }}' | jq '.digest | to_entries | map([.value]|join(","))')"
-          echo "result=${result}" >> $GITHUB_OUTPUT
-    outputs:
-      result: "${{ steps.array.outputs.result }}"
-
   build-multi-architecture:
     needs:
-      - read
+      - build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -108,8 +92,17 @@ jobs:
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}/e2e
+      - uses: cloudposse/github-action-matrix-outputs-read@main
+        id: read
+        with:
+          matrix-step-name: build
+      - name: map to array
+        id: array
+        run: |
+          result="$(echo '${{ steps.read.outputs.result }}' | jq -c '.digest | to_entries | map([.value]|join(","))')"
+          echo "result=${result}" >> $GITHUB_OUTPUT
       - name: docker-manifest-create-action
         uses: ./
         with:
           tags: ${{ steps.metadata.outputs.tags }}
-          digests: ${{ fromJson(needs.read.outputs.result) }}
+          digests: ${{ fromJson(steps.array.outputs.result) }}
