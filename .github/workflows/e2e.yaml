@@ -99,7 +99,7 @@ jobs:
       - name: map to array
         id: array
         run: |
-          result="$(echo '${{ steps.read.outputs.result }}' | jq -c '.digest | to_entries | map([.value]|join(","))')"
+          result="$(echo '${{ steps.read.outputs.result }}' | jq -c '.digest | to_entries | map(.value) | join(",")')"
           echo "result=${result}" >> $GITHUB_OUTPUT
       - name: docker-manifest-create-action
         uses: ./
