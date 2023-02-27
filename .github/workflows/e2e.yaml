@@ -62,7 +62,7 @@ jobs:
         id: out
         with:
           matrix-step-name: ${{ github.job }}
-          # matrix-key: ${{ matrix.platform }}
+          matrix-key: ${{ matrix.platform }}
           outputs: |-
             digest: ${{ steps.build.outputs.digest }}
 
