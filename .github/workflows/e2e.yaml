@@ -2,7 +2,7 @@ name: e2e
 
 on:
   push:
-    branches: [use-digests]
+    branches: [main]
     tags: [v*]
     paths:
       - src/**
