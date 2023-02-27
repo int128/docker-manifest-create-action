@@ -59,12 +59,12 @@ jobs:
           cache-to: ${{ steps.cache.outputs.cache-to }}
           platforms: ${{ matrix.platform }}
       - uses: cloudposse/github-action-matrix-outputs-write@main
-          id: out
-          with:
-            matrix-step-name: ${{ github.job }}
-            # matrix-key: ${{ matrix.platform }}
-            outputs: |-
-              digest: ${{ steps.build.outputs.digest }}
+        id: out
+        with:
+          matrix-step-name: ${{ github.job }}
+          # matrix-key: ${{ matrix.platform }}
+          outputs: |-
+            digest: ${{ steps.build.outputs.digest }}
 
   read:
     runs-on: ubuntu-latest
