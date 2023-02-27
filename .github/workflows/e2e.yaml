@@ -74,8 +74,13 @@ jobs:
         id: read
         with:
           matrix-step-name: build
+      - name: map to array
+        id: array
+        run: |
+          result="$(echo ${{ steps.read.outputs.result }} | jq '.digest | to_entries | map([.value]|join(","))')""
+          echo "result=${result}" >> $GITHUB_OUTPUT
     outputs:
-      result: "${{ steps.read.outputs.result }}"
+      result: "${{ steps.array.outputs.result }}"
 
   build-multi-architecture:
     needs:
