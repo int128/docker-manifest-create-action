@@ -36,7 +36,7 @@ describe('run', () => {
         'ghcr.io/int128/docker-manifest-create-action:latest',
       ],
       suffixes: ['-amd64'],
-      digests: []
+      digests: [],
     })
 
     // non-latest tag
