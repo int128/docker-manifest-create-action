@@ -42,7 +42,8 @@ jobs:
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}/e2e
-          flavor: suffix=-${{ matrix.platform }}
+          # avoid overwriting the latest tag because metadata-action does not add a suffix to it
+          flavor: latest=false,suffix=-${{ matrix.platform }}
       - uses: int128/docker-build-cache-config-action@v1
         id: cache
         with:
@@ -58,6 +59,13 @@ jobs:
           cache-from: ${{ steps.cache.outputs.cache-from }}
           cache-to: ${{ steps.cache.outputs.cache-to }}
           platforms: ${{ matrix.platform }}
+      - uses: cloudposse/github-action-matrix-outputs-write@main
+        id: out
+        with:
+          matrix-step-name: ${{ github.job }}
+          matrix-key: ${{ matrix.platform }}
+          outputs: |-
+            digest: ${{ steps.build.outputs.digest }}
 
   build-multi-architecture:
     needs:
@@ -85,8 +93,17 @@ jobs:
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}/e2e
+      - uses: cloudposse/github-action-matrix-outputs-read@main
+        id: read
+        with:
+          matrix-step-name: build
+      - name: map to array
+        id: array
+        run: |
+          result="$(echo '${{ steps.read.outputs.result }}' | jq -c '.digest | to_entries | map(.value) | join(",")')"
+          echo "result=${result}" >> $GITHUB_OUTPUT
       - name: docker-manifest-create-action
         uses: ./
         with:
           tags: ${{ steps.metadata.outputs.tags }}
-          digests: ${{ join(needs.*.outputs.digest) }}
+          digests: ${{ fromJson(steps.array.outputs.result) }}

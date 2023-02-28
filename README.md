@@ -6,8 +6,7 @@ It is interoperable with [docker/build-push-action](https://github.com/docker/bu
 ## Purpose
 
 When we build a multi-architecture image using [docker/build-push-action](https://github.com/docker/build-push-action), it takes a long time to build all platforms in a single job.
-
-It would be nice to build images in parallel jobs and finally create a multi-architecture image.
+It would be nice to build images in parallel and finally create a multi-architecture image from them.
 
 ```mermaid
 graph LR
@@ -17,22 +16,25 @@ graph LR
   ppc64le[Image ghcr.io/owner/repo:tag-linux-ppc64le] --> m
 ```
 
-This action runs the following commands to create a multi-architecture image:
+We can create a multi-architecture image by the following commands:
 
 - [`docker manifest create`](https://docs.docker.com/engine/reference/commandline/manifest_create/)
 - [`docker manifest push`](https://docs.docker.com/engine/reference/commandline/manifest_push/)
 
-For example, when the following inputs are given,
+This action depends on the commands.
+For example, if it is called with the following inputs,
 
 ```yaml
-tags: ghcr.io/owner/repo:tag
-suffixes: |
-  -linux-amd64
-  -linux-arm64
-  -linux-ppc64le
+      - uses: int128/docker-manifest-create-action@v1
+        with:
+          tags: ghcr.io/owner/repo:tag
+          suffixes: |
+            -linux-amd64
+            -linux-arm64
+            -linux-ppc64le
 ```
 
-this action runs the following commands:
+it executes the following commands:
 
 ```sh
 # create a manifest of multi-architecture image
@@ -43,6 +45,9 @@ docker manifest create ghcr.io/owner/repo:tag \
 
 # push the manifest to the remote repository
 docker manifest push owner/repo:tag
+
+# verify the manifest
+docker manifest inspect owner/repo:tag
 ```
 
 See also the following docs:
@@ -52,7 +57,7 @@ See also the following docs:
 
 ## Getting Started
 
-Here is an example of workflow to build a multi-architecture image for `amd64` and `arm64`.
+Here is an example workflow to build a multi-architecture image for `amd64` and `arm64`.
 
 ```yaml
 jobs:
@@ -75,7 +80,8 @@ jobs:
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}
-          flavor: suffix=-${{ matrix.platform }}
+          # avoid overwriting the latest tag because metadata-action does not add a suffix to it
+          flavor: latest=false,suffix=-${{ matrix.platform }}
       - uses: docker/setup-buildx-action@v2
       - uses: docker/build-push-action@v3
         with:
@@ -118,24 +124,42 @@ graph TB
   end
 ```
 
+See also [the full example of e2e-test](.github/workflows/e2e.yaml) with cache options.
+
+### For branches
+
+When `main` branch is pushed, `build` job creates the following images by default of [docker/metadata-action](https://github.com/docker/metadata-action):
+
+- `ghcr.io/owner/repo:main-linux-amd64`
+- `ghcr.io/owner/repo:main-linux-arm64`
+
+Then, `build-multi-architecture` job creates the following image:
+
+- `ghcr.io/owner/repo:main`
+
+### For tags
+
 When `v1.0.0` tag is pushed, `build` job creates the following images by default of [docker/metadata-action](https://github.com/docker/metadata-action):
 
 - `ghcr.io/owner/repo:v1.0.0-linux-amd64`
 - `ghcr.io/owner/repo:v1.0.0-linux-arm64`
-- `ghcr.io/owner/repo:latest-linux-amd64`
-- `ghcr.io/owner/repo:latest-linux-arm64`
+
+Because docker/metadata-action does not add a suffix to `latest` tag,
+it needs to set `latest=false` to avoid overwriting `latest` tag for each build.
 
 Finally, `build-multi-architecture` job creates the following images:
 
 - `ghcr.io/owner/repo:v1.0.0`
 - `ghcr.io/owner/repo:latest`
 
-See also [the workflow of e2e test](.github/workflows/e2e.yaml) with cache options.
+If `latest` tag is given, this action pushes it from the non-latest tag.
 
-### For self-hosted runners
+## Native build on self-hosted runners
 
-If you are using the self-hosted runners on multi-architecture, you can set `runs-on` to each runner.
-For example,
+If you are using the self-hosted runners, you can build an image faster.
+For example, you can natively build an `arm64` image on AWS Graviton 2.
+
+Here is an example workflow.
 
 ```yaml
 jobs:
@@ -148,7 +172,7 @@ jobs:
           - arm64
     runs-on:
       - self-hosted
-      - ${{ matrix.platform }}
+      - ubuntu-${{ matrix.platform }}
     permissions:
       id-token: write
       contents: read
@@ -214,4 +238,5 @@ This action runs the following commands for each tag.
 ```sh
 docker manifest create {tag} {tag}{suffix}...
 docker manifest push {tag}
+docker manifest inspect {tag}
 ```
