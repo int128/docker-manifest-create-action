@@ -11,6 +11,8 @@ export const run = async (inputs: Inputs): Promise<void> => {
     throw new Error(`one or more suffixes must be set`)
   }
 
+  await exec.exec('docker', ['version'])
+
   const nonLatestTags = inputs.tags.filter((tag) => !tag.endsWith(':latest'))
   const latestTag = inputs.tags.find((tag) => tag.endsWith(':latest'))
 
