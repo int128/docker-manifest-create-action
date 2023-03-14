@@ -8,6 +8,10 @@ inputs:
   suffixes:
     description: suffixes of source images (multi-line string)
     required: true
+  use-buildx:
+    description: use docker buildx (auto | true | false)
+    required: false
+    default: auto
 
 runs:
   using: 'node16'
