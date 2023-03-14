@@ -82,4 +82,4 @@ jobs:
         with:
           tags: ${{ steps.metadata.outputs.tags }}
           suffixes: |
-            -kaniko-amd64
+            -amd64
