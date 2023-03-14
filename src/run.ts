@@ -48,7 +48,7 @@ const determineUseBuildx = async (flag: string): Promise<boolean> => {
     case 'false':
       return false
   }
-  throw new Error(`buildx must be either auto, true or false`)
+  throw new Error(`use-buildx must be either auto, true or false`)
 }
 
 export const getSourceManifests = (tag: string, suffixes: string[]) => suffixes.map((suffix) => `${tag}${suffix}`)
