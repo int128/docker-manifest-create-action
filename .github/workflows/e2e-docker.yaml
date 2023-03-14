@@ -1,0 +1,93 @@
+name: e2e-docker
+
+on:
+  pull_request:
+    paths:
+      - src/**
+      - tests/**
+      - '*.json'
+      - action.yaml
+      - .github/workflows/e2e-docker.yaml
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+    paths:
+      - src/**
+      - tests/**
+      - '*.json'
+      - action.yaml
+      - .github/workflows/e2e-docker.yaml
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@507c2f2dc502c992ad446e3d7a5dfbe311567a96 # v4.3.0
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}/e2e
+          # avoid overwriting the latest tag because metadata-action does not add a suffix to it
+          flavor: latest=false,suffix=-${{ matrix.platform }}
+      - uses: int128/docker-build-cache-config-action@71310c6f6a493dd29e5a6d0d50d99a5b75fb7c1f # v1.14.0
+        id: cache
+        with:
+          image: ghcr.io/${{ github.repository }}/e2e/cache
+      - uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c # v2.5.0
+      - uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6 # v3.3.1
+        with:
+          push: true
+          context: tests/fixtures
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: ${{ steps.cache.outputs.cache-from }}
+          cache-to: ${{ steps.cache.outputs.cache-to }}
+          platforms: ${{ matrix.platform }}
+
+  build-multi-architecture:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # build the action
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
+        with:
+          node-version: 16
+          cache: yarn
+      - run: yarn
+      - run: yarn build
+      - run: yarn package
+
+      # run the action
+      - uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@507c2f2dc502c992ad446e3d7a5dfbe311567a96 # v4.3.0
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}/e2e
+      - name: docker-manifest-create-action
+        uses: ./
+        with:
+          tags: ${{ steps.metadata.outputs.tags }}
+          suffixes: |
+            -linux-amd64
+            -linux-arm64
