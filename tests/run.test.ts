@@ -8,6 +8,7 @@ describe('run', () => {
     await run({
       tags: ['ghcr.io/int128/docker-manifest-create-action:main'],
       suffixes: ['-amd64', '-arm64'],
+      useBuildx: 'auto',
     })
     expect(exec.exec).toHaveBeenCalledWith('docker', [
       'manifest',
@@ -35,6 +36,7 @@ describe('run', () => {
         'ghcr.io/int128/docker-manifest-create-action:latest',
       ],
       suffixes: ['-amd64'],
+      useBuildx: 'auto',
     })
 
     // non-latest tag

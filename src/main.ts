@@ -5,6 +5,7 @@ const main = async (): Promise<void> => {
   await run({
     tags: core.getMultilineInput('tags', { required: true }),
     suffixes: core.getMultilineInput('suffixes', { required: true }),
+    useBuildx: core.getInput('use-buildx', { required: true }),
   })
 }
 

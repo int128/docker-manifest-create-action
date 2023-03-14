@@ -4,6 +4,7 @@ import * as exec from '@actions/exec'
 type Inputs = {
   tags: string[]
   suffixes: string[]
+  useBuildx: string
 }
 
 export const run = async (inputs: Inputs): Promise<void> => {
@@ -11,14 +12,14 @@ export const run = async (inputs: Inputs): Promise<void> => {
     throw new Error(`one or more suffixes must be set`)
   }
 
-  await exec.exec('docker', ['version'])
+  const useBuildx = await determineUseBuildx(inputs.useBuildx)
+  core.info(`Using ${useBuildx ? 'buildx' : 'docker'} command`)
 
   const nonLatestTags = inputs.tags.filter((tag) => !tag.endsWith(':latest'))
   const latestTag = inputs.tags.find((tag) => tag.endsWith(':latest'))
-
   for (const tag of nonLatestTags) {
     const sourceManifests = getSourceManifests(tag, inputs.suffixes)
-    await dockerManifestCreatePush(tag, sourceManifests)
+    await pushManifest(tag, sourceManifests, useBuildx)
     core.info(`Pushed a manifest ${tag}`)
   }
 
@@ -28,14 +29,37 @@ export const run = async (inputs: Inputs): Promise<void> => {
     }
     const nonLatestTag = nonLatestTags[0]
     const sourceManifests = getSourceManifests(nonLatestTag, inputs.suffixes)
-    await dockerManifestCreatePush(latestTag, sourceManifests)
+    await pushManifest(latestTag, sourceManifests, useBuildx)
     core.info(`Pushed a manifest ${latestTag}`)
   }
 }
 
+const determineUseBuildx = async (flag: string): Promise<boolean> => {
+  core.startGroup('Checking if docker buildx is available')
+  await exec.exec('docker', ['version'])
+  const buildxIsAvailable = (await exec.exec('docker', ['buildx', 'version'], { ignoreReturnCode: true })) === 0
+  core.endGroup()
+
+  switch (flag) {
+    case 'auto':
+      return buildxIsAvailable
+    case 'true':
+      return true
+    case 'false':
+      return false
+  }
+  throw new Error(`use-buildx must be either auto, true or false`)
+}
+
 export const getSourceManifests = (tag: string, suffixes: string[]) => suffixes.map((suffix) => `${tag}${suffix}`)
 
-const dockerManifestCreatePush = async (destination: string, source: string[]) => {
+const pushManifest = async (destination: string, source: string[], buildx: boolean) => {
+  if (buildx) {
+    await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, ...source])
+    await exec.exec('docker', ['buildx', 'imagetools', 'inspect', destination])
+    return
+  }
+
   await exec.exec('docker', ['manifest', 'create', destination, ...source])
   await exec.exec('docker', ['manifest', 'push', destination])
   await exec.exec('docker', ['manifest', 'inspect', destination])

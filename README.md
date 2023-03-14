@@ -3,7 +3,7 @@
 This is an action to create a multi-architecture Docker image in GitHub Actions.
 It is interoperable with [docker/build-push-action](https://github.com/docker/build-push-action) and [docker/metadata-action](https://github.com/docker/metadata-action).
 
-## Purpose
+## Getting Started
 
 When we build a multi-architecture image using [docker/build-push-action](https://github.com/docker/build-push-action), it takes a long time to build all platforms in a single job.
 It would be nice to build images in parallel and finally create a multi-architecture image from them.
@@ -18,11 +18,14 @@ graph LR
 
 We can create a multi-architecture image by the following commands:
 
-- [`docker manifest create`](https://docs.docker.com/engine/reference/commandline/manifest_create/)
-- [`docker manifest push`](https://docs.docker.com/engine/reference/commandline/manifest_push/)
+- Docker
+  - [`docker manifest create`](https://docs.docker.com/engine/reference/commandline/manifest_create/)
+  - [`docker manifest push`](https://docs.docker.com/engine/reference/commandline/manifest_push/)
+- Buildx
+  - [`docker buildx imagetools create`](https://docs.docker.com/engine/reference/commandline/buildx_imagetools_create/)
 
-This action depends on the commands.
-For example, if it is called with the following inputs,
+This action runs these commands.
+For example, when the following inputs are given,
 
 ```yaml
       - uses: int128/docker-manifest-create-action@v1
@@ -34,7 +37,20 @@ For example, if it is called with the following inputs,
             -linux-ppc64le
 ```
 
-it executes the following commands:
+If docker buildx is available, it runs the following commands:
+
+```sh
+# push a manifest of multi-architecture image
+docker buildx imagetools create -t ghcr.io/owner/repo:tag \
+  ghcr.io/owner/repo:tag-linux-amd64 \
+  ghcr.io/owner/repo:tag-linux-arm64 \
+  ghcr.io/owner/repo:tag-linux-ppc64le
+
+# verify the manifest
+docker buildx imagetools inspect owner/repo:tag
+```
+
+If docker buildx is not available, it runs the following commands:
 
 ```sh
 # create a manifest of multi-architecture image
@@ -50,12 +66,14 @@ docker manifest push owner/repo:tag
 docker manifest inspect owner/repo:tag
 ```
 
+You can explicitly turn on or off buildx feature by setting `use-buildx`.
+
 See also the following docs:
 
 - [Create and push a manifest list](https://docs.docker.com/engine/reference/commandline/manifest/#create-and-push-a-manifest-list) (Docker)
 - [Pushing a multi-architecture image](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html) (Amazon ECR)
 
-## Getting Started
+## Full example
 
 Here is an example workflow to build a multi-architecture image for `amd64` and `arm64`.
 
@@ -226,6 +244,7 @@ jobs:
 |------|----------|------------
 | `tags` | (required) | tags of destination images (multi-line string)
 | `suffixes` | (required) | suffixes of source images (multi-line string)
+| `use-buildx` | `auto` | use docker buildx (either `auto`, `true` or `false`)
 
 ### Outputs
 
@@ -236,7 +255,12 @@ Nothing.
 This action runs the following commands for each tag.
 
 ```sh
+# docker
 docker manifest create {tag} {tag}{suffix}...
 docker manifest push {tag}
 docker manifest inspect {tag}
+
+# buildx
+docker buildx imagetools create -t {tag} {tag}{suffix}...
+docker buildx imagetools inspect {tag}
 ```
