@@ -11,14 +11,16 @@ export const run = async (inputs: Inputs): Promise<void> => {
     throw new Error(`one or more suffixes must be set`)
   }
 
+  core.startGroup('Checking if docker buildx is available')
   await exec.exec('docker', ['version'])
+  const buildx = (await exec.exec('docker', ['buildx', 'version'], { ignoreReturnCode: true })) === 0
+  core.endGroup()
 
   const nonLatestTags = inputs.tags.filter((tag) => !tag.endsWith(':latest'))
   const latestTag = inputs.tags.find((tag) => tag.endsWith(':latest'))
-
   for (const tag of nonLatestTags) {
     const sourceManifests = getSourceManifests(tag, inputs.suffixes)
-    await dockerManifestCreatePush(tag, sourceManifests)
+    await pushManifest(tag, sourceManifests, buildx)
     core.info(`Pushed a manifest ${tag}`)
   }
 
@@ -28,14 +30,20 @@ export const run = async (inputs: Inputs): Promise<void> => {
     }
     const nonLatestTag = nonLatestTags[0]
     const sourceManifests = getSourceManifests(nonLatestTag, inputs.suffixes)
-    await dockerManifestCreatePush(latestTag, sourceManifests)
+    await pushManifest(latestTag, sourceManifests, buildx)
     core.info(`Pushed a manifest ${latestTag}`)
   }
 }
 
 export const getSourceManifests = (tag: string, suffixes: string[]) => suffixes.map((suffix) => `${tag}${suffix}`)
 
-const dockerManifestCreatePush = async (destination: string, source: string[]) => {
+const pushManifest = async (destination: string, source: string[], buildx: boolean) => {
+  if (buildx) {
+    await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, ...source])
+    await exec.exec('docker', ['buildx', 'imagetools', 'inspect', destination])
+    return
+  }
+
   await exec.exec('docker', ['manifest', 'create', destination, ...source])
   await exec.exec('docker', ['manifest', 'push', destination])
   await exec.exec('docker', ['manifest', 'inspect', destination])
