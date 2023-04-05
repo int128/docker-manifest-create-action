@@ -4,7 +4,7 @@ import * as exec from '@actions/exec'
 type Inputs = {
   tags: string[]
   suffixes: string[]
-  useBuildx: string
+  builder: string
 }
 
 export const run = async (inputs: Inputs): Promise<void> => {
@@ -12,14 +12,14 @@ export const run = async (inputs: Inputs): Promise<void> => {
     throw new Error(`one or more suffixes must be set`)
   }
 
-  const useBuildx = await determineUseBuildx(inputs.useBuildx)
-  core.info(`Using ${useBuildx ? 'buildx' : 'docker'} command`)
+  const builder = await determineBuilder(inputs.builder)
+  core.info(`Using builder: ${builder}`)
 
   const nonLatestTags = inputs.tags.filter((tag) => !tag.endsWith(':latest'))
   const latestTag = inputs.tags.find((tag) => tag.endsWith(':latest'))
   for (const tag of nonLatestTags) {
     const sourceManifests = getSourceManifests(tag, inputs.suffixes)
-    await pushManifest(tag, sourceManifests, useBuildx)
+    await pushManifest(tag, sourceManifests, builder)
     core.info(`Pushed a manifest ${tag}`)
   }
 
@@ -29,32 +29,32 @@ export const run = async (inputs: Inputs): Promise<void> => {
     }
     const nonLatestTag = nonLatestTags[0]
     const sourceManifests = getSourceManifests(nonLatestTag, inputs.suffixes)
-    await pushManifest(latestTag, sourceManifests, useBuildx)
+    await pushManifest(latestTag, sourceManifests, builder)
     core.info(`Pushed a manifest ${latestTag}`)
   }
 }
 
-const determineUseBuildx = async (flag: string): Promise<boolean> => {
-  core.startGroup('Checking if docker buildx is available')
+type BuilderName = 'buildx' | 'docker'
+
+const determineBuilder = async (flag: string): Promise<BuilderName> => {
+  core.startGroup('Checking if buildx is available')
   await exec.exec('docker', ['version'])
   const buildxIsAvailable = (await exec.exec('docker', ['buildx', 'version'], { ignoreReturnCode: true })) === 0
   core.endGroup()
 
-  switch (flag) {
-    case 'auto':
-      return buildxIsAvailable
-    case 'true':
-      return true
-    case 'false':
-      return false
+  if (flag === 'buildx' || flag === 'docker') {
+    return flag
   }
-  throw new Error(`use-buildx must be either auto, true or false`)
+  if (flag === 'auto') {
+    return buildxIsAvailable ? 'buildx' : 'docker'
+  }
+  throw new Error(`builder must be either auto, buildx or docker`)
 }
 
 export const getSourceManifests = (tag: string, suffixes: string[]) => suffixes.map((suffix) => `${tag}${suffix}`)
 
-const pushManifest = async (destination: string, source: string[], buildx: boolean) => {
-  if (buildx) {
+const pushManifest = async (destination: string, source: string[], builder: BuilderName) => {
+  if (builder === 'buildx') {
     await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, ...source])
     await exec.exec('docker', ['buildx', 'imagetools', 'inspect', destination])
     return
