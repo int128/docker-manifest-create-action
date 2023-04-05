@@ -11,7 +11,7 @@ describe('using buildx', () => {
     await run({
       tags: ['ghcr.io/int128/docker-manifest-create-action:main'],
       suffixes: ['-amd64', '-arm64'],
-      useBuildx: 'auto',
+      builder: 'auto',
     })
     expect(exec.exec).toHaveBeenCalledWith('docker', [
       'buildx',
@@ -37,7 +37,7 @@ describe('using buildx', () => {
         'ghcr.io/int128/docker-manifest-create-action:latest',
       ],
       suffixes: ['-amd64'],
-      useBuildx: 'auto',
+      builder: 'auto',
     })
 
     // non-latest tag
@@ -87,7 +87,7 @@ describe('using docker', () => {
     await run({
       tags: ['ghcr.io/int128/docker-manifest-create-action:main'],
       suffixes: ['-amd64', '-arm64'],
-      useBuildx: 'auto',
+      builder: 'auto',
     })
     expect(exec.exec).toHaveBeenCalledWith('docker', [
       'manifest',
@@ -115,7 +115,7 @@ describe('using docker', () => {
         'ghcr.io/int128/docker-manifest-create-action:latest',
       ],
       suffixes: ['-amd64'],
-      useBuildx: 'auto',
+      builder: 'auto',
     })
 
     // non-latest tag

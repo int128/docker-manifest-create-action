@@ -8,9 +8,9 @@ inputs:
   suffixes:
     description: suffixes of source images (multi-line string)
     required: true
-  use-buildx:
-    description: use docker buildx (auto | true | false)
-    required: false
+  builder:
+    description: builder (auto | buildx | docker)
+    required: true
     default: auto
 
 runs:

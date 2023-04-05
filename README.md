@@ -18,11 +18,11 @@ graph LR
 
 We can create a multi-architecture image by the following commands:
 
+- Buildx
+  - [`docker buildx imagetools create`](https://docs.docker.com/engine/reference/commandline/buildx_imagetools_create/)
 - Docker
   - [`docker manifest create`](https://docs.docker.com/engine/reference/commandline/manifest_create/)
   - [`docker manifest push`](https://docs.docker.com/engine/reference/commandline/manifest_push/)
-- Buildx
-  - [`docker buildx imagetools create`](https://docs.docker.com/engine/reference/commandline/buildx_imagetools_create/)
 
 This action runs these commands.
 For example, when the following inputs are given,
@@ -37,7 +37,7 @@ For example, when the following inputs are given,
             -linux-ppc64le
 ```
 
-If docker buildx is available, it runs the following commands:
+If using Buildx, it runs the following commands:
 
 ```sh
 # push a manifest of multi-architecture image
@@ -50,7 +50,7 @@ docker buildx imagetools create -t ghcr.io/owner/repo:tag \
 docker buildx imagetools inspect owner/repo:tag
 ```
 
-If docker buildx is not available, it runs the following commands:
+If using Docker, it runs the following commands:
 
 ```sh
 # create a manifest of multi-architecture image
@@ -66,7 +66,8 @@ docker manifest push owner/repo:tag
 docker manifest inspect owner/repo:tag
 ```
 
-You can explicitly turn on or off buildx feature by setting `use-buildx`.
+This action uses buildx if available by default.
+You can explicitly set the builder.
 
 See also the following docs:
 
@@ -244,7 +245,7 @@ jobs:
 |------|----------|------------
 | `tags` | (required) | tags of destination images (multi-line string)
 | `suffixes` | (required) | suffixes of source images (multi-line string)
-| `use-buildx` | `auto` | use docker buildx (either `auto`, `true` or `false`)
+| `builder` | `auto` | builder (either `auto`, `buildx` or `docker`)
 
 ### Outputs
 
@@ -255,12 +256,12 @@ Nothing.
 This action runs the following commands for each tag.
 
 ```sh
+# buildx
+docker buildx imagetools create -t {tag} {tag}{suffix}...
+docker buildx imagetools inspect {tag}
+
 # docker
 docker manifest create {tag} {tag}{suffix}...
 docker manifest push {tag}
 docker manifest inspect {tag}
-
-# buildx
-docker buildx imagetools create -t {tag} {tag}{suffix}...
-docker buildx imagetools inspect {tag}
 ```
