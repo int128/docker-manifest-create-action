@@ -76,6 +76,7 @@ const pushManifest = async (destination: string, source: string[], builder: Buil
       'org.opencontainers.image.description': 'Create a multi-architecture Docker image in GitHub Actions',
       'org.opencontainers.image.licenses': 'Apache-2.0',
     }
+    core.info(JSON.stringify(descriptorObject, undefined, 2))
     await fs.writeFile('descriptor.json', JSON.stringify(descriptorObject))
     await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, '-f', 'descriptor.json'])
     await exec.exec('docker', ['buildx', 'imagetools', 'inspect', destination])
