@@ -56,31 +56,32 @@ export const getSourceManifests = (tag: string, suffixes: string[]) => suffixes.
 
 const pushManifest = async (destination: string, source: string[], builder: BuilderName) => {
   if (builder === 'buildx') {
+    await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, ...source])
     const { stdout: descriptor } = await exec.getExecOutput('docker', [
       'buildx',
       'imagetools',
-      'create',
-      '--dry-run',
-      ...source,
+      'inspect',
+      '--format',
+      '{{json .Manifest}}',
+      destination,
     ])
     // TODO: fix
     // https://github.com/opencontainers/image-spec/blob/main/descriptor.md#properties
-    // const descriptorObject = JSON.parse(descriptor) as Record<string, unknown>
-    // descriptorObject['annotations'] = {
-    //   'org.opencontainers.image.url': 'https://github.com/int128/docker-manifest-create-action',
-    //   'org.opencontainers.image.source': 'https://github.com/int128/docker-manifest-create-action',
-    //   'org.opencontainers.image.title': 'docker-manifest-create-action',
-    //   'org.opencontainers.image.revision': process.env['GITHUB_SHA'],
-    //   'org.opencontainers.image.created': '2023-04-05T00:00:00.309Z',
-    //   'org.opencontainers.image.version': 'pr-999',
-    //   'org.opencontainers.image.description': 'Create a multi-architecture Docker image in GitHub Actions',
-    //   'org.opencontainers.image.licenses': 'Apache-2.0',
-    // }
-    // await fs.writeFile('descriptor.json', JSON.stringify(descriptorObject))
-    core.info(JSON.stringify(descriptor, undefined, 2))
-    await fs.writeFile('descriptor.json', descriptor)
+    const descriptorObject = JSON.parse(descriptor) as Record<string, unknown>
+    descriptorObject['annotations'] = {
+      'org.opencontainers.image.url': 'https://github.com/int128/docker-manifest-create-action',
+      'org.opencontainers.image.source': 'https://github.com/int128/docker-manifest-create-action',
+      'org.opencontainers.image.title': 'docker-manifest-create-action',
+      'org.opencontainers.image.revision': process.env['GITHUB_SHA'],
+      'org.opencontainers.image.created': '2023-04-05T00:00:00.309Z',
+      'org.opencontainers.image.version': 'pr-999',
+      'org.opencontainers.image.description': 'Create a multi-architecture Docker image in GitHub Actions',
+      'org.opencontainers.image.licenses': 'Apache-2.0',
+    }
+    core.info(JSON.stringify(descriptorObject, undefined, 2))
+    await fs.writeFile('descriptor.json', JSON.stringify(descriptorObject))
     await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, '-f', 'descriptor.json'])
-    await exec.exec('docker', ['buildx', 'imagetools', 'inspect', destination])
+    await exec.exec('docker', ['buildx', 'imagetools', 'inspect', '--format', '{{json .Manifest}}', destination])
     return
   }
 
