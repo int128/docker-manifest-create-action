@@ -60,10 +60,9 @@ const pushManifest = async (destination: string, source: string[], builder: Buil
     const { stdout: descriptor } = await exec.getExecOutput('docker', [
       'buildx',
       'imagetools',
-      'inspect',
-      '--format',
-      '{{json .Manifest}}',
-      destination,
+      'create',
+      '--dry-run',
+      ...source,
     ])
     // TODO: fix
     // https://github.com/opencontainers/image-spec/blob/main/descriptor.md#properties
