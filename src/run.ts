@@ -65,19 +65,20 @@ const pushManifest = async (destination: string, source: string[], builder: Buil
     ])
     // TODO: fix
     // https://github.com/opencontainers/image-spec/blob/main/descriptor.md#properties
-    const descriptorObject = JSON.parse(descriptor) as Record<string, unknown>
-    descriptorObject['annotations'] = {
-      'org.opencontainers.image.url': 'https://github.com/int128/docker-manifest-create-action',
-      'org.opencontainers.image.source': 'https://github.com/int128/docker-manifest-create-action',
-      'org.opencontainers.image.title': 'docker-manifest-create-action',
-      'org.opencontainers.image.revision': process.env['GITHUB_SHA'],
-      'org.opencontainers.image.created': '2023-04-05T00:00:00.309Z',
-      'org.opencontainers.image.version': 'pr-999',
-      'org.opencontainers.image.description': 'Create a multi-architecture Docker image in GitHub Actions',
-      'org.opencontainers.image.licenses': 'Apache-2.0',
-    }
-    core.info(JSON.stringify(descriptorObject, undefined, 2))
-    await fs.writeFile('descriptor.json', JSON.stringify(descriptorObject))
+    // const descriptorObject = JSON.parse(descriptor) as Record<string, unknown>
+    // descriptorObject['annotations'] = {
+    //   'org.opencontainers.image.url': 'https://github.com/int128/docker-manifest-create-action',
+    //   'org.opencontainers.image.source': 'https://github.com/int128/docker-manifest-create-action',
+    //   'org.opencontainers.image.title': 'docker-manifest-create-action',
+    //   'org.opencontainers.image.revision': process.env['GITHUB_SHA'],
+    //   'org.opencontainers.image.created': '2023-04-05T00:00:00.309Z',
+    //   'org.opencontainers.image.version': 'pr-999',
+    //   'org.opencontainers.image.description': 'Create a multi-architecture Docker image in GitHub Actions',
+    //   'org.opencontainers.image.licenses': 'Apache-2.0',
+    // }
+    // await fs.writeFile('descriptor.json', JSON.stringify(descriptorObject))
+    core.info(JSON.stringify(descriptor, undefined, 2))
+    await fs.writeFile('descriptor.json', descriptor)
     await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, '-f', 'descriptor.json'])
     await exec.exec('docker', ['buildx', 'imagetools', 'inspect', destination])
     return
