@@ -56,7 +56,7 @@ export const getSourceManifests = (tag: string, suffixes: string[]) => suffixes.
 
 const pushManifest = async (destination: string, source: string[], builder: BuilderName) => {
   if (builder === 'buildx') {
-    await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, ...source])
+    // await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, ...source])
     const { stdout: descriptor } = await exec.getExecOutput('docker', [
       'buildx',
       'imagetools',
@@ -80,7 +80,7 @@ const pushManifest = async (destination: string, source: string[], builder: Buil
     }
     core.info(JSON.stringify(descriptorObject, undefined, 2))
     await fs.writeFile('descriptor.json', JSON.stringify(descriptorObject))
-    await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, '-f', 'descriptor.json'])
+    await exec.exec('docker', ['buildx', 'imagetools', 'create', '-t', destination, JSON.stringify(descriptorObject)])
     await exec.exec('docker', ['buildx', 'imagetools', 'inspect', '--format', '{{json .Manifest}}', destination])
     return
   }
