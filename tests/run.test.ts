@@ -81,7 +81,7 @@ describe('using docker', () => {
         return new Promise((resolve) => resolve(1)) // buildx is not available
       }
       return new Promise((resolve) => resolve(0))
-    })
+    }),
   )
   test('push a branch', async () => {
     await run({
@@ -165,7 +165,7 @@ describe('getSourceManifests', () => {
 
   test('suffixes', () => {
     expect(
-      getSourceManifests('ghcr.io/int128/docker-manifest-create-action:pr-1', ['-amd64', '-arm64', '-ppc64le'])
+      getSourceManifests('ghcr.io/int128/docker-manifest-create-action:pr-1', ['-amd64', '-arm64', '-ppc64le']),
     ).toStrictEqual([
       'ghcr.io/int128/docker-manifest-create-action:pr-1-amd64',
       'ghcr.io/int128/docker-manifest-create-action:pr-1-arm64',
