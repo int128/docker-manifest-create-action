@@ -59,10 +59,11 @@ jobs:
           platforms: ${{ matrix.platform }}
 
   build-multi-architecture:
-    needs:
-      - build
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      image-uri: ghcr.io/${{ github.repository }}/e2e@${{ steps.create.outputs.digest }}
     steps:
       # build the action
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -85,9 +86,22 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/e2e
       - name: docker-manifest-create-action
+        id: create
         uses: ./
         with:
           tags: ${{ steps.metadata.outputs.tags }}
           suffixes: |
             -linux-amd64
             -linux-arm64
+
+  test-image:
+    needs: build-multi-architecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: docker run --rm '${{ needs.build-multi-architecture.outputs.image-uri }}'
