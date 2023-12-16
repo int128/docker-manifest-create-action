@@ -86,7 +86,7 @@ const getDigest = async (tag: string, builder: BuilderName): Promise<string> => 
     'imagetools',
     'inspect',
     '--format',
-    '{{json .Manifest.digest}}',
+    '{{json .Manifest.Digest}}',
     tag,
   ])
   return stdout.replace(/^"|"$/g, '')
