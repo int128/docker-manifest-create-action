@@ -16,21 +16,27 @@ export const run = async (inputs: Inputs): Promise<void> => {
   core.info(`Using builder: ${builder}`)
 
   const nonLatestTags = inputs.tags.filter((tag) => !tag.endsWith(':latest'))
-  const latestTag = inputs.tags.find((tag) => tag.endsWith(':latest'))
+  const latestTags = inputs.tags.filter((tag) => tag.endsWith(':latest'))
   for (const tag of nonLatestTags) {
     const sourceManifests = getSourceManifests(tag, inputs.suffixes)
     await pushManifest(tag, sourceManifests, builder)
     core.info(`Pushed a manifest ${tag}`)
   }
 
-  if (latestTag) {
+  if (latestTags.length !== 0) {
     if (nonLatestTags.length === 0) {
       throw new Error(`when latest tag is given, also non-latest tag must be given`)
     }
-    const nonLatestTag = nonLatestTags[0]
-    const sourceManifests = getSourceManifests(nonLatestTag, inputs.suffixes)
-    await pushManifest(latestTag, sourceManifests, builder)
-    core.info(`Pushed a manifest ${latestTag}`)
+    for (const latestTag of latestTags) {
+      const image = latestTag.replace(/:latest$/, '')
+      const nonLatestTag = nonLatestTags.find((tag) => tag.startsWith(image))
+      if (!nonLatestTag) {
+        throw new Error(`when latest tag is given, also non-latest tag must be given`)
+      }
+      const sourceManifests = getSourceManifests(nonLatestTag, inputs.suffixes)
+      await pushManifest(latestTag, sourceManifests, builder)
+      core.info(`Pushed a manifest ${latestTag}`)
+    }
   }
 }
 

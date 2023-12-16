@@ -72,6 +72,79 @@ describe('using buildx', () => {
       'ghcr.io/int128/docker-manifest-create-action:latest',
     ])
   })
+
+  test('multi container registry with latest', async () => {
+    await run({
+      tags: [
+        'int128/docker-manifest-create-action:v1.0.0',
+        'int128/docker-manifest-create-action:latest',
+        'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
+        'ghcr.io/int128/docker-manifest-create-action:latest',
+      ],
+      suffixes: ['-amd64'],
+      builder: 'auto',
+    })
+
+    // non-latest tag
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'create',
+      '-t',
+      'int128/docker-manifest-create-action:v1.0.0',
+      'int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'inspect',
+      'int128/docker-manifest-create-action:v1.0.0',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'create',
+      '-t',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'inspect',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
+    ])
+
+    // latest tag
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'create',
+      '-t',
+      'int128/docker-manifest-create-action:latest',
+      'int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'inspect',
+      'int128/docker-manifest-create-action:latest',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'create',
+      '-t',
+      'ghcr.io/int128/docker-manifest-create-action:latest',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'buildx',
+      'imagetools',
+      'inspect',
+      'ghcr.io/int128/docker-manifest-create-action:latest',
+    ])
+  })
 })
 
 describe('using docker', () => {
@@ -152,6 +225,87 @@ describe('using docker', () => {
       'manifest',
       'inspect',
       'ghcr.io/int128/docker-manifest-create-action:latest',
+    ])
+  })
+
+  test('multi container registry with latest', async () => {
+    await run({
+      tags: [
+        'int128/docker-manifest-create-action:v1.0.0',
+        'int128/docker-manifest-create-action:latest',
+        'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
+        'ghcr.io/int128/docker-manifest-create-action:latest',
+      ],
+      suffixes: ['-amd64'],
+      builder: 'auto',
+    })
+
+    // non-latest tag
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'create',
+      'int128/docker-manifest-create-action:v1.0.0',
+      'int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'push',
+      'int128/docker-manifest-create-action:v1.0.0',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'inspect',
+      'int128/docker-manifest-create-action:v1.0.0',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'create',
+      'ghcr.io/int128/docker-manifest-create-action:latest',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'push',
+      'ghcr.io/int128/docker-manifest-create-action:latest',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'inspect',
+      'ghcr.io/int128/docker-manifest-create-action:latest',
+    ])
+
+    // latest tag
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'create',
+      'int128/docker-manifest-create-action:latest',
+      'int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'push',
+      'int128/docker-manifest-create-action:latest',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'inspect',
+      'int128/docker-manifest-create-action:latest',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'create',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0-amd64',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'push',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
+    ])
+    expect(exec.exec).toHaveBeenCalledWith('docker', [
+      'manifest',
+      'inspect',
+      'ghcr.io/int128/docker-manifest-create-action:v1.0.0',
     ])
   })
 })
