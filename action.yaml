@@ -13,6 +13,10 @@ inputs:
     required: true
     default: auto
 
+outputs:
+  digest:
+    description: Digest of the created manifest
+
 runs:
   using: 'node20'
   main: 'dist/index.js'

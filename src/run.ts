@@ -38,6 +38,11 @@ export const run = async (inputs: Inputs): Promise<void> => {
       core.info(`Pushed a manifest ${latestTag}`)
     }
   }
+
+  if (nonLatestTags.length > 0) {
+    const digest = await getDigest(nonLatestTags[0], builder)
+    core.setOutput('digest', digest)
+  }
 }
 
 type BuilderName = 'buildx' | 'docker'
@@ -69,4 +74,20 @@ const pushManifest = async (destination: string, source: string[], builder: Buil
   await exec.exec('docker', ['manifest', 'create', destination, ...source])
   await exec.exec('docker', ['manifest', 'push', destination])
   await exec.exec('docker', ['manifest', 'inspect', destination])
+}
+
+const getDigest = async (tag: string, builder: BuilderName): Promise<string> => {
+  if (builder !== 'buildx') {
+    return ''
+  }
+
+  const { stdout } = await exec.getExecOutput('docker', [
+    'buildx',
+    'imagetools',
+    'inspect',
+    '--format',
+    '{{json .Manifest.digest}}',
+    tag,
+  ])
+  return stdout.replace(/^"|"$/g, '')
 }
