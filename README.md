@@ -1,15 +1,13 @@
 # docker-manifest-create-action [![ts](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml/badge.svg)](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml)
 
-This is an action to create a multi-architecture Docker image in GitHub Actions.
+This is an action to create a multi-architectures container image in GitHub Actions.
 It is interoperable with [docker/metadata-action](https://github.com/docker/metadata-action).
 
 ## Migration from V1 to V2
 
-This action is a thin wrapper of `docker buildx imagetools create`.
-You need to set an image URI instead of a tag element.
-
-If you use `docker/build-push-action`, you can construct an image URI from the outputs.
-For example,
+Since v2, this action does not support the `suffixes` input.
+You need to set an image URI with a digest or tag.
+If you use docker/build-push-action, you can construct an image URI from the outputs as follows:
 
 ```yaml
 - uses: docker/build-push-action@v5
@@ -29,28 +27,28 @@ For example,
 
 ## Getting Started
 
-When we build a multi-architecture image using [docker/build-push-action](https://github.com/docker/build-push-action), it takes a long time to build all platforms in a single job.
+When we build a multi-architectures image using [docker/build-push-action](https://github.com/docker/build-push-action), it takes a long time to build all platforms in a single job.
 It would be nice to build images in parallel and finally create a multi-architecture image from them.
 
 ```mermaid
 graph LR
-  m[Image ghcr.io/owner/repo:tag]
-  amd64[Image ghcr.io/owner/repo:tag-linux-amd64] --> m
-  arm64[Image ghcr.io/owner/repo:tag-linux-arm64] --> m
-  ppc64le[Image ghcr.io/owner/repo:tag-linux-ppc64le] --> m
+  m[Image REGISTRY/REPOSITORY:TAG]
+  amd64[Image REGISTRY/REPOSITORY:TAG-linux-amd64] --> m
+  arm64[Image REGISTRY/REPOSITORY:TAG-linux-arm64] --> m
+  ppc64le[Image REGISTRY/REPOSITORY:TAG-linux-ppc64le] --> m
 ```
 
-We can create a multi-architecture image by the below commands.
+We can create a multi-architectures image by the below commands.
 
 ```sh
 # push a manifest of multi-architecture image
-docker buildx imagetools create -t ghcr.io/owner/repo:tag \
-  ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000001 \
-  ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000002 \
-  ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000003
+docker buildx imagetools create -t REGISTRY/REPOSITORY:TAG \
+  REGISTRY/REPOSITORY:TAG-linux-amd64 \
+  REGISTRY/REPOSITORY:TAG-linux-arm64 \
+  REGISTRY/REPOSITORY:TAG-linux-ppc64le
 
 # verify the manifest
-docker buildx imagetools inspect owner/repo:tag
+docker buildx imagetools inspect REGISTRY/REPOSITORY:TAG
 ```
 
 This action runs the above commands for each tag.
@@ -59,11 +57,11 @@ This action runs the above commands for each tag.
 - uses: int128/docker-manifest-create-action@v2
   with:
     tags: |
-      ghcr.io/owner/repo:tag
+      REGISTRY/REPOSITORY:TAG
     sources: |
-      ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000001
-      ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000002
-      ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000003
+      REGISTRY/REPOSITORY:TAG-linux-amd64
+      REGISTRY/REPOSITORY:TAG-linux-arm64
+      REGISTRY/REPOSITORY:TAG-linux-ppc64le
 ```
 
 See also the following docs:
@@ -76,7 +74,7 @@ See also the following docs:
 
 ### Basic usage
 
-Here is an example workflow to build a multi-architecture image for `linux/amd64` and `linux/arm64`.
+Here is an example workflow to build a multi-architectures image for `linux/amd64` and `linux/arm64`.
 
 ```yaml
 jobs:
@@ -135,7 +133,7 @@ For details, see the following workflows:
 - [`.github/workflows/reusable--docker-build.yaml`](.github/workflows/reusable--docker-build.yaml)
 - [`.github/workflows/e2e-kaniko.yaml`](.github/workflows/e2e-kaniko.yaml)
 
-### Native build on self-hosted runners
+### Native build on the self-hosted runners
 
 If you are using the self-hosted runners, you can build an image faster.
 For example, you can natively build an `arm64` image on AWS Graviton 2.
@@ -185,6 +183,8 @@ jobs:
 ```
 
 ## Specification
+
+This action requires Docker Buildx.
 
 ### Inputs
 
