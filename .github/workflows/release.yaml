@@ -6,7 +6,7 @@ on:
       - .github/workflows/release.yaml
   push:
     branches:
-      - main
+      - main-v1
     tags:
       - v*
 

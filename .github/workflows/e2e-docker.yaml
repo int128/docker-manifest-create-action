@@ -10,7 +10,7 @@ on:
       - .github/workflows/e2e-docker.yaml
   push:
     branches:
-      - main
+      - main-v1
     tags:
       - v*
     paths:
