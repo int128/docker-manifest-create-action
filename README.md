@@ -1,7 +1,12 @@
 # docker-manifest-create-action [![ts](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml/badge.svg)](https://github.com/int128/docker-manifest-create-action/actions/workflows/ts.yaml)
 
 This is an action to create a multi-architecture Docker image in GitHub Actions.
-It is interoperable with [docker/build-push-action](https://github.com/docker/build-push-action) and [docker/metadata-action](https://github.com/docker/metadata-action).
+It is interoperable with [docker/metadata-action](https://github.com/docker/metadata-action).
+
+## Migration from V1 to V2
+
+Since v2, this action is a thin wrapper of `docker buildx imagetools create`.
+You need to set an image URI instead of a tag element.
 
 ## Getting Started
 
@@ -16,164 +21,102 @@ graph LR
   ppc64le[Image ghcr.io/owner/repo:tag-linux-ppc64le] --> m
 ```
 
-We can create a multi-architecture image by the following commands:
-
-- Buildx
-  - [`docker buildx imagetools create`](https://docs.docker.com/engine/reference/commandline/buildx_imagetools_create/)
-- Docker
-  - [`docker manifest create`](https://docs.docker.com/engine/reference/commandline/manifest_create/)
-  - [`docker manifest push`](https://docs.docker.com/engine/reference/commandline/manifest_push/)
-
-This action runs these commands.
-For example, when the following inputs are given,
-
-```yaml
-      - uses: int128/docker-manifest-create-action@v1
-        with:
-          tags: ghcr.io/owner/repo:tag
-          suffixes: |
-            -linux-amd64
-            -linux-arm64
-            -linux-ppc64le
-```
-
-If using Buildx, it runs the following commands:
+We can create a multi-architecture image by the below commands.
 
 ```sh
 # push a manifest of multi-architecture image
 docker buildx imagetools create -t ghcr.io/owner/repo:tag \
-  ghcr.io/owner/repo:tag-linux-amd64 \
-  ghcr.io/owner/repo:tag-linux-arm64 \
-  ghcr.io/owner/repo:tag-linux-ppc64le
+  ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000001 \
+  ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000002 \
+  ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000003
 
 # verify the manifest
 docker buildx imagetools inspect owner/repo:tag
 ```
 
-If using Docker, it runs the following commands:
+This action runs the above commands for each tag.
 
-```sh
-# create a manifest of multi-architecture image
-docker manifest create ghcr.io/owner/repo:tag \
-  ghcr.io/owner/repo:tag-linux-amd64 \
-  ghcr.io/owner/repo:tag-linux-arm64 \
-  ghcr.io/owner/repo:tag-linux-ppc64le
-
-# push the manifest to the remote repository
-docker manifest push owner/repo:tag
-
-# verify the manifest
-docker manifest inspect owner/repo:tag
+```yaml
+- uses: int128/docker-manifest-create-action@v2
+  with:
+    tags: |
+      ghcr.io/owner/repo:tag
+    sources: |
+      ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000001
+      ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000002
+      ghcr.io/owner/repo@sha256:0000000000000000000000000000000000000000000000000000000000000003
 ```
-
-This action uses buildx if available by default.
-You can explicitly set the builder.
 
 See also the following docs:
 
+- [`docker buildx imagetools create`](https://docs.docker.com/engine/reference/commandline/buildx_imagetools_create/)
 - [Create and push a manifest list](https://docs.docker.com/engine/reference/commandline/manifest/#create-and-push-a-manifest-list) (Docker)
 - [Pushing a multi-architecture image](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html) (Amazon ECR)
 
-## Full example
+## Examples
 
-Here is an example workflow to build a multi-architecture image for `amd64` and `arm64`.
+### Basic usage
+
+Here is an example workflow to build a multi-architecture image for `linux/amd64` and `linux/arm64`.
 
 ```yaml
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v4
-        id: metadata
-        with:
-          images: ghcr.io/${{ github.repository }}
-          # avoid overwriting the latest tag because metadata-action does not add a suffix to it
-          flavor: latest=false,suffix=-${{ matrix.platform }}
-      - uses: docker/setup-buildx-action@v2
-      - uses: docker/build-push-action@v3
-        with:
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          platforms: ${{ matrix.platform }}
+  build-linux-amd64:
+    uses: ./.github/workflows/reusable--docker-build.yaml
+    with:
+      images: ghcr.io/${{ github.repository }}
+      platforms: linux/amd64
 
-  build-multi-architecture:
+  build-linux-arm64:
+    uses: ./.github/workflows/reusable--docker-build.yaml
+    with:
+      images: ghcr.io/${{ github.repository }}
+      platforms: linux/arm64
+
+  build:
     needs:
-      - build
+      - build-linux-amd64
+      - build-linux-arm64
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      image-uri: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
     steps:
-      - uses: docker/login-action@v2
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v4
+      - uses: docker/metadata-action@v5
         id: metadata
         with:
           images: ghcr.io/${{ github.repository }}
-      - uses: int128/docker-manifest-create-action@v1
+      - uses: int128/docker-manifest-create-action@v2
+        id: build
         with:
           tags: ${{ steps.metadata.outputs.tags }}
-          suffixes: |
-            -linux-amd64
-            -linux-arm64
+          sources: |
+            ghcr.io/${{ github.repository }}@${{ needs.build-linux-amd64.outputs.digest }}
+            ghcr.io/${{ github.repository }}@${{ needs.build-linux-arm64.outputs.digest }}
 ```
 
-Here is a diagram of this workflow:
+Here is the diagram of this workflow.
 
 ```mermaid
 graph TB
   subgraph Workflow
-    amd64[build linux/amd64] --> build-multi-architecture
-    arm64[build linux/arm64] --> build-multi-architecture
-    build-multi-architecture
+    build-linux-amd64 --> build
+    build-linux-arm64 --> build
   end
 ```
 
-See also [the full example of e2e-test](.github/workflows/e2e.yaml) with cache options.
+For details, see the following workflows:
 
-### For branches
+- [`.github/workflows/e2e-docker.yaml`](.github/workflows/e2e-docker.yaml)
+- [`.github/workflows/reusable--docker-build.yaml`](.github/workflows/reusable--docker-build.yaml)
+- [`.github/workflows/e2e-kaniko.yaml`](.github/workflows/e2e-kaniko.yaml)
 
-When `main` branch is pushed, `build` job creates the following images by default of [docker/metadata-action](https://github.com/docker/metadata-action):
-
-- `ghcr.io/owner/repo:main-linux-amd64`
-- `ghcr.io/owner/repo:main-linux-arm64`
-
-Then, `build-multi-architecture` job creates the following image:
-
-- `ghcr.io/owner/repo:main`
-
-### For tags
-
-When `v1.0.0` tag is pushed, `build` job creates the following images by default of [docker/metadata-action](https://github.com/docker/metadata-action):
-
-- `ghcr.io/owner/repo:v1.0.0-linux-amd64`
-- `ghcr.io/owner/repo:v1.0.0-linux-arm64`
-
-Because docker/metadata-action does not add a suffix to `latest` tag,
-it needs to set `latest=false` to avoid overwriting `latest` tag for each build.
-
-Finally, `build-multi-architecture` job creates the following images:
-
-- `ghcr.io/owner/repo:v1.0.0`
-- `ghcr.io/owner/repo:latest`
-
-If `latest` tag is given, this action pushes it from the non-latest tag.
-
-## Native build on self-hosted runners
+### Native build on self-hosted runners
 
 If you are using the self-hosted runners, you can build an image faster.
 For example, you can natively build an `arm64` image on AWS Graviton 2.
@@ -182,86 +125,57 @@ Here is an example workflow.
 
 ```yaml
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - amd64
-          - arm64
-    runs-on:
-      - self-hosted
-      - ubuntu-${{ matrix.platform }}
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::ACCOUNT:role/ROLE
-      - uses: aws-actions/amazon-ecr-login@v1
-        id: ecr
-      - uses: docker/metadata-action@v4
-        id: metadata
-        with:
-          images: ${{ steps.ecr.outputs.registry }}/${{ github.repository }}
-          flavor: suffix=-${{ matrix.platform }}
-      - uses: docker/build-push-action@v3
-        with:
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
+  build-linux-amd64:
+    uses: ./.github/workflows/reusable--docker-build.yaml
+    with:
+      runs-on: self-hosted-amd64
 
-  build-multi-architecture:
+  build-linux-arm64:
+    uses: ./.github/workflows/reusable--docker-build.yaml
+    with:
+      runs-on: self-hosted-arm64
+
+  build:
     needs:
-      - build
+      - build-linux-amd64
+      - build-linux-arm64
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
-      id-token: write
       contents: read
+      id-token: write
+    outputs:
+      image-uri: ${{ steps.ecr.outputs.registry }}/${{ github.repository }}@${{ steps.build.outputs.digest }}
     steps:
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: arn:aws:iam::ACCOUNT:role/ROLE
-      - uses: aws-actions/amazon-ecr-login@v1
+      - uses: aws-actions/amazon-ecr-login@v3
         id: ecr
-      - uses: docker/metadata-action@v4
+      - uses: docker/metadata-action@v5
         id: metadata
         with:
           images: ${{ steps.ecr.outputs.registry }}/${{ github.repository }}
-      - uses: int128/docker-manifest-create-action@v1
+      - uses: int128/docker-manifest-create-action@v2
+        id: build
         with:
           tags: ${{ steps.metadata.outputs.tags }}
-          suffixes: |
-            -amd64
-            -arm64
+          sources: |
+            ${{ steps.ecr.outputs.registry }}/${{ github.repository }}@${{ needs.build-linux-amd64.outputs.digest }}
+            ${{ steps.ecr.outputs.registry }}/${{ github.repository }}@${{ needs.build-linux-arm64.outputs.digest }}
 ```
 
 ## Specification
 
 ### Inputs
 
-| Name | Default | Description
-|------|----------|------------
-| `tags` | (required) | tags of destination images (multi-line string)
-| `suffixes` | (required) | suffixes of source images (multi-line string)
-| `builder` | `auto` | builder (either `auto`, `buildx` or `docker`)
+| Name      | Default    | Description                                    |
+| --------- | ---------- | ---------------------------------------------- |
+| `tags`    | (required) | Tags of destination images (multi-line string) |
+| `sources` | (required) | Image URIs of sources (multi-line string)      |
 
 ### Outputs
 
-Nothing.
-
-### Behavior
-
-This action runs the following commands for each tag.
-
-```sh
-# buildx
-docker buildx imagetools create -t {tag} {tag}{suffix}...
-docker buildx imagetools inspect {tag}
-
-# docker
-docker manifest create {tag} {tag}{suffix}...
-docker manifest push {tag}
-docker manifest inspect {tag}
-```
+| Name     | Description                    |
+| -------- | ------------------------------ |
+| `digest` | Digest of the created manifest |

@@ -21,48 +21,30 @@ on:
       - .github/workflows/e2e-docker.yaml
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@31cebacef4805868f9ce9a0cb03ee36c32df2ac4 # v5.3.0
-        id: metadata
-        with:
-          images: ghcr.io/${{ github.repository }}/e2e
-          # avoid overwriting the latest tag because metadata-action does not add a suffix to it
-          flavor: latest=false,suffix=-${{ matrix.platform }}
-      - uses: int128/docker-build-cache-config-action@1ae274f683e01b2b3eb290167f51590fd7035316 # v1.28.0
-        id: cache
-        with:
-          image: ghcr.io/${{ github.repository }}/e2e/cache
-      - uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
-      - uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5.1.0
-        with:
-          push: true
-          context: tests/fixtures
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: ${{ steps.cache.outputs.cache-from }}
-          cache-to: ${{ steps.cache.outputs.cache-to }}
-          platforms: ${{ matrix.platform }}
+  build-linux-amd64:
+    uses: ./.github/workflows/reusable--docker-build.yaml
+    with:
+      images: ghcr.io/${{ github.repository }}/e2e
+      cache-image: ghcr.io/${{ github.repository }}/e2e/cache
+      context: tests/fixtures
+      platforms: linux/amd64
 
-  build-multi-architecture:
+  build-linux-arm64:
+    uses: ./.github/workflows/reusable--docker-build.yaml
+    with:
+      images: ghcr.io/${{ github.repository }}/e2e
+      cache-image: ghcr.io/${{ github.repository }}/e2e/cache
+      context: tests/fixtures
+      platforms: linux/arm64
+
+  build:
     needs:
-      - build
+      - build-linux-amd64
+      - build-linux-arm64
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      image-uri: ghcr.io/${{ github.repository }}/e2e@${{ steps.build.outputs.digest }}
     steps:
       # build the action
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -85,9 +67,22 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/e2e
       - name: docker-manifest-create-action
+        id: build
         uses: ./
         with:
           tags: ${{ steps.metadata.outputs.tags }}
-          suffixes: |
-            -linux-amd64
-            -linux-arm64
+          sources: |
+            ${{ needs.build-linux-amd64.outputs.image-uri }}
+            ${{ needs.build-linux-arm64.outputs.image-uri }}
+
+  test-image:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: docker run --rm '${{ needs.build.outputs.image-uri }}'

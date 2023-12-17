@@ -21,15 +21,11 @@ on:
       - .github/workflows/e2e-kaniko.yaml
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - amd64
-          #- arm64
+  build-linux-amd64:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      image-uri: ghcr.io/${{ github.repository }}/e2e@${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
@@ -42,19 +38,22 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/e2e
           # avoid overwriting the latest tag because metadata-action does not add a suffix to it
-          flavor: latest=false,suffix=-kaniko-${{ matrix.platform }}
+          flavor: latest=false,suffix=-kaniko-amd64
       - uses: int128/kaniko-action@eb4404462292acd60e2395278949aeb09ed12908 # v1.34.0
+        id: build
         with:
           push: true
           context: tests/fixtures
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
 
-  build-multi-architecture:
+  build:
     needs:
-      - build
+      - build-linux-amd64
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      image-uri: ghcr.io/${{ github.repository }}/e2e@${{ steps.build.outputs.digest }}
     steps:
       # build the action
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -77,9 +76,22 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}/e2e
           flavor: latest=false,suffix=-kaniko
-      - name: docker-manifest-create-action
+      - name: docker-manifest-create-action@v2
+        id: build
         uses: ./
         with:
           tags: ${{ steps.metadata.outputs.tags }}
-          suffixes: |
-            -amd64
+          sources: |
+            ${{ needs.build-linux-amd64.outputs.image-uri }}
+
+  test-image:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: docker run --rm '${{ needs.build.outputs.image-uri }}'
