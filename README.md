@@ -8,7 +8,7 @@ It is interoperable with [docker/metadata-action](https://github.com/docker/meta
 This action is a thin wrapper of `docker buildx imagetools create`.
 You need to set an image URI instead of a tag element.
 
-If you use `docker/build-push-action`, you can get the digest from the outputs.
+If you use `docker/build-push-action`, you can construct an image URI from the outputs.
 For example,
 
 ```yaml
