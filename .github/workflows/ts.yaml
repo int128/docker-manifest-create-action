@@ -10,7 +10,7 @@ on:
       - .github/workflows/ts.yaml
   push:
     branches:
-      - main
+      - main-v1
     paths:
       - src/**
       - tests/**
