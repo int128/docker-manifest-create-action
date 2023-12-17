@@ -5,8 +5,27 @@ It is interoperable with [docker/metadata-action](https://github.com/docker/meta
 
 ## Migration from V1 to V2
 
-Since v2, this action is a thin wrapper of `docker buildx imagetools create`.
+This action is a thin wrapper of `docker buildx imagetools create`.
 You need to set an image URI instead of a tag element.
+
+If you use `docker/build-push-action`, you can get the digest from the outputs.
+For example,
+
+```yaml
+- uses: docker/build-push-action@v5
+  id: build-amd64
+  with: # ...omit...
+- uses: docker/build-push-action@v5
+  id: build-arm64
+  with: # ...omit...
+
+- uses: int128/docker-manifest-create-action@v2
+  with:
+    tags: ghcr.io/${{ github.repository }}:main
+    sources: |
+      ghcr.io/${{ github.repository }}@${{ steps.build-amd64.outputs.digest }}
+      ghcr.io/${{ github.repository }}@${{ steps.build-arm64.outputs.digest }}
+```
 
 ## Getting Started
 
