@@ -5,7 +5,8 @@ It is interoperable with [docker/metadata-action](https://github.com/docker/meta
 
 ## Migration from V1 to V2
 
-TODO
+Since v2, this action is a thin wrapper of `docker buildx imagetools create`.
+You need to set an image URI instead of a tag element.
 
 ## Getting Started
 
@@ -54,7 +55,7 @@ See also the following docs:
 
 ## Examples
 
-### GHCR
+### Basic usage
 
 Here is an example workflow to build a multi-architecture image for `linux/amd64` and `linux/arm64`.
 
@@ -63,13 +64,13 @@ jobs:
   build-linux-amd64:
     uses: ./.github/workflows/reusable--docker-build.yaml
     with:
-      images: ghcr.io/${{ github.repository }}/e2e
+      images: ghcr.io/${{ github.repository }}
       platforms: linux/amd64
 
   build-linux-arm64:
     uses: ./.github/workflows/reusable--docker-build.yaml
     with:
-      images: ghcr.io/${{ github.repository }}/e2e
+      images: ghcr.io/${{ github.repository }}
       platforms: linux/arm64
 
   build:
@@ -79,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      image-uri: ghcr.io/${{ github.repository }}/e2e@${{ steps.build.outputs.digest }}
+      image-uri: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
     steps:
       - uses: docker/login-action@v3
         with:
@@ -89,14 +90,14 @@ jobs:
       - uses: docker/metadata-action@v5
         id: metadata
         with:
-          images: ghcr.io/${{ github.repository }}/e2e
+          images: ghcr.io/${{ github.repository }}
       - uses: int128/docker-manifest-create-action@v2
         id: build
         with:
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
-            ${{ needs.build-linux-amd64.outputs.image-uri }}
-            ${{ needs.build-linux-arm64.outputs.image-uri }}
+            ghcr.io/${{ github.repository }}@${{ needs.build-linux-amd64.outputs.digest }}
+            ghcr.io/${{ github.repository }}@${{ needs.build-linux-arm64.outputs.digest }}
 ```
 
 Here is the diagram of this workflow.
@@ -128,13 +129,11 @@ jobs:
     uses: ./.github/workflows/reusable--docker-build.yaml
     with:
       runs-on: self-hosted-amd64
-      ecr-repository: ${{ github.repository }}
 
   build-linux-arm64:
     uses: ./.github/workflows/reusable--docker-build.yaml
     with:
       runs-on: self-hosted-arm64
-      ecr-repository: ${{ github.repository }}
 
   build:
     needs:
@@ -162,8 +161,8 @@ jobs:
         with:
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
-            ${{ needs.build-linux-amd64.outputs.image-uri }}
-            ${{ needs.build-linux-arm64.outputs.image-uri }}
+            ${{ steps.ecr.outputs.registry }}/${{ github.repository }}@${{ needs.build-linux-amd64.outputs.digest }}
+            ${{ steps.ecr.outputs.registry }}/${{ github.repository }}@${{ needs.build-linux-arm64.outputs.digest }}
 ```
 
 ## Specification
