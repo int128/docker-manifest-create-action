@@ -28,13 +28,13 @@ This action runs these commands.
 For example, when the following inputs are given,
 
 ```yaml
-      - uses: int128/docker-manifest-create-action@v1
-        with:
-          tags: ghcr.io/owner/repo:tag
-          suffixes: |
-            -linux-amd64
-            -linux-arm64
-            -linux-ppc64le
+- uses: int128/docker-manifest-create-action@v1
+  with:
+    tags: ghcr.io/owner/repo:tag
+    suffixes: |
+      -linux-amd64
+      -linux-arm64
+      -linux-ppc64le
 ```
 
 If using Buildx, it runs the following commands:
@@ -241,15 +241,17 @@ jobs:
 
 ### Inputs
 
-| Name | Default | Description
-|------|----------|------------
-| `tags` | (required) | tags of destination images (multi-line string)
-| `suffixes` | (required) | suffixes of source images (multi-line string)
-| `builder` | `auto` | builder (either `auto`, `buildx` or `docker`)
+| Name       | Default    | Description                                    |
+| ---------- | ---------- | ---------------------------------------------- |
+| `tags`     | (required) | tags of destination images (multi-line string) |
+| `suffixes` | (required) | suffixes of source images (multi-line string)  |
+| `builder`  | `auto`     | builder (either `auto`, `buildx` or `docker`)  |
 
 ### Outputs
 
-Nothing.
+| Name     | Description                    |
+| -------- | ------------------------------ |
+| `digest` | Digest of the created manifest |
 
 ### Behavior
 
