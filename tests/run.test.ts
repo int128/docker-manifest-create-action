@@ -14,6 +14,7 @@ it('should run docker buildx imagetools', async () => {
 
   const outputs = await run({
     push: true,
+    labels: [],
     tags: ['ghcr.io/int128/docker-manifest-create-action:main'],
     sources: [
       'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
@@ -44,6 +45,7 @@ it('should run docker buildx imagetools', async () => {
 it('should run docker buildx imagetools --dry-run if push is false', async () => {
   const outputs = await run({
     push: false,
+    labels: [],
     tags: [],
     sources: [
       'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
