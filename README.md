@@ -5,7 +5,7 @@ It is interoperable with [docker/metadata-action](https://github.com/docker/meta
 
 ## Migration from V1 to V2
 
-Since v2, this action does not support the `suffixes` input.
+This action no longer supports the `suffixes` input.
 You need to set an image URI with a digest or tag.
 If you use docker/build-push-action, you can construct an image URI from the outputs as follows:
 
@@ -28,7 +28,7 @@ If you use docker/build-push-action, you can construct an image URI from the out
 ## Getting Started
 
 When we build a multi-architectures image using [docker/build-push-action](https://github.com/docker/build-push-action), it takes a long time to build all platforms in a single job.
-It would be nice to build images in parallel and finally create a multi-architecture image from them.
+It would be nice to build images in parallel and finally create a multi-architectures image from them.
 
 ```mermaid
 graph LR
