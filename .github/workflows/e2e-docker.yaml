@@ -57,6 +57,7 @@ jobs:
       - run: yarn package
 
       # run the action
+      - uses: docker/setup-buildx-action@v3.0.0
       - uses: docker/metadata-action@31cebacef4805868f9ce9a0cb03ee36c32df2ac4 # v5.3.0
         id: metadata
         with:
