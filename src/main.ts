@@ -3,11 +3,14 @@ import { run } from './run'
 
 const main = async (): Promise<void> => {
   const outputs = await run({
-    tags: core.getMultilineInput('tags', { required: true }),
+    push: core.getBooleanInput('push', { required: true }),
+    tags: core.getMultilineInput('tags'),
     sources: core.getMultilineInput('sources', { required: true }),
   })
-  core.info(`Setting outputs: ${JSON.stringify(outputs, undefined, 2)}`)
-  core.setOutput('digest', outputs.digest)
+  if (outputs.digest) {
+    core.info(`Setting outputs.digest=${outputs.digest}`)
+    core.setOutput('digest', outputs.digest)
+  }
 }
 
 main().catch((e: Error) => {

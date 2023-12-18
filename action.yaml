@@ -2,11 +2,15 @@ name: docker-manifest-create-action
 description: Create a multi-architecture Docker image in GitHub Actions
 
 inputs:
+  push:
+    description: Push the manifest to the registry
+    required: false
+    default: 'true'
   tags:
-    description: Tags of destination images (multi-line string)
-    required: true
+    description: Tags of the destination images (multi-line string)
+    required: false
   sources:
-    description: Image URIs of sources (multi-line string)
+    description: Image URIs of the sources (multi-line string)
     required: true
 
 outputs:

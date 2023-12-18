@@ -13,6 +13,7 @@ it('should run docker buildx imagetools', async () => {
   })
 
   const outputs = await run({
+    push: true,
     tags: ['ghcr.io/int128/docker-manifest-create-action:main'],
     sources: [
       'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
@@ -37,5 +38,26 @@ it('should run docker buildx imagetools', async () => {
     'imagetools',
     'inspect',
     'ghcr.io/int128/docker-manifest-create-action:main',
+  ])
+})
+
+it('should run docker buildx imagetools --dry-run if push is false', async () => {
+  const outputs = await run({
+    push: false,
+    tags: [],
+    sources: [
+      'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
+      'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000001',
+    ],
+  })
+  expect(outputs).toStrictEqual({ digest: undefined })
+
+  expect(exec.exec).toHaveBeenCalledWith('docker', [
+    'buildx',
+    'imagetools',
+    'create',
+    '--dry-run',
+    'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
+    'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000001',
   ])
 })
