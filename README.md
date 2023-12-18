@@ -188,10 +188,13 @@ This action requires Docker Buildx.
 
 ### Inputs
 
-| Name      | Default    | Description                                    |
-| --------- | ---------- | ---------------------------------------------- |
-| `tags`    | (required) | Tags of destination images (multi-line string) |
-| `sources` | (required) | Image URIs of sources (multi-line string)      |
+| Name      | Default                        | Description                                        |
+| --------- | ------------------------------ | -------------------------------------------------- |
+| `push`    | `true`                         | Push the manifest to the registry                  |
+| `tags`    | (required if `push` is `true`) | Tags of the destination images (multi-line string) |
+| `sources` | (required)                     | Image URIs of the sources (multi-line string)      |
+
+If `push` is `false`, this action runs `docker buildx imagetools create --dry-run`.
 
 ### Outputs
 
