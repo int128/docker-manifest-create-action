@@ -1,6 +1,6 @@
+import assert from 'assert'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
-import assert from 'assert'
 
 type Inputs = {
   push: boolean
