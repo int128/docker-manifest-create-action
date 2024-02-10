@@ -14,7 +14,7 @@ it('should run docker buildx imagetools', async () => {
 
   const outputs = await run({
     push: true,
-    annotations: [],
+    indexAnnotations: [],
     tags: ['ghcr.io/int128/docker-manifest-create-action:main'],
     sources: [
       'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
@@ -45,7 +45,7 @@ it('should run docker buildx imagetools', async () => {
 it('should run docker buildx imagetools --dry-run if push is false', async () => {
   const outputs = await run({
     push: false,
-    annotations: [],
+    indexAnnotations: [],
     tags: [],
     sources: [
       'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
@@ -73,7 +73,7 @@ it('should add annotations', async () => {
 
   const outputs = await run({
     push: true,
-    annotations: [
+    indexAnnotations: [
       'org.opencontainers.image.revision=0123456789012345678901234567890123456789',
       'org.opencontainers.image.created=2021-01-01T00:00:00Z',
     ],

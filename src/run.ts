@@ -4,7 +4,7 @@ import * as exec from '@actions/exec'
 
 type Inputs = {
   push: boolean
-  annotations: string[]
+  indexAnnotations: string[]
   tags: string[]
   sources: string[]
 }
@@ -19,35 +19,35 @@ export const run = async (inputs: Inputs): Promise<Outputs> => {
   core.endGroup()
 
   if (!inputs.push) {
-    await dryRunCreateManifest(inputs.sources, inputs.annotations)
+    await dryRunCreateManifest(inputs.sources, inputs.indexAnnotations)
     return { digest: undefined }
   }
 
   assert(inputs.tags.length > 0, 'tags must be set')
   for (const tag of inputs.tags) {
-    await createManifest(tag, inputs.sources, inputs.annotations)
+    await createManifest(tag, inputs.sources, inputs.indexAnnotations)
   }
   const digest = await getDigest(inputs.tags[0])
   return { digest }
 }
 
-const dryRunCreateManifest = async (sources: string[], annotations: string[]) => {
+const dryRunCreateManifest = async (sources: string[], indexAnnotations: string[]) => {
   await exec.exec('docker', [
     'buildx',
     'imagetools',
     'create',
     '--dry-run',
-    ...toAnnotationFlags(annotations),
+    ...toAnnotationFlags(indexAnnotations),
     ...sources,
   ])
 }
 
-const createManifest = async (destination: string, sources: string[], annotations: string[]) => {
+const createManifest = async (destination: string, sources: string[], indexAnnotations: string[]) => {
   await exec.exec('docker', [
     'buildx',
     'imagetools',
     'create',
-    ...toAnnotationFlags(annotations),
+    ...toAnnotationFlags(indexAnnotations),
     '-t',
     destination,
     ...sources,
@@ -55,8 +55,8 @@ const createManifest = async (destination: string, sources: string[], annotation
   await exec.exec('docker', ['buildx', 'imagetools', 'inspect', destination])
 }
 
-const toAnnotationFlags = (annotations: string[]): string[] =>
-  annotations.flatMap((a) => [
+const toAnnotationFlags = (indexAnnotations: string[]): string[] =>
+  indexAnnotations.flatMap((a) => [
     '--annotation',
     // https://docs.docker.com/engine/reference/commandline/buildx_imagetools_create/#annotation
     `index:${a}`,

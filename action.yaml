@@ -6,7 +6,7 @@ inputs:
     description: Push the manifest to the registry
     required: false
     default: 'true'
-  annotations:
+  index-annotations:
     description: Add annotations to the image index (multi-line string)
     required: false
   tags:

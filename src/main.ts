@@ -4,7 +4,7 @@ import { run } from './run'
 const main = async (): Promise<void> => {
   const outputs = await run({
     push: core.getBooleanInput('push', { required: true }),
-    annotations: core.getMultilineInput('annotations'),
+    indexAnnotations: core.getMultilineInput('index-annotations'),
     tags: core.getMultilineInput('tags'),
     sources: core.getMultilineInput('sources', { required: true }),
   })

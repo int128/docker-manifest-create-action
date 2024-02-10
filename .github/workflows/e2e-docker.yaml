@@ -80,7 +80,7 @@ jobs:
         id: build
         uses: ./
         with:
-          annotations: ${{ steps.metadata.outputs.labels }}
+          index-annotations: ${{ steps.metadata.outputs.labels }}
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
             ${{ needs.build-linux-amd64.outputs.image-uri }}
