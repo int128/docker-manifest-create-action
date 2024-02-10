@@ -66,7 +66,7 @@ jobs:
         uses: ./
         with:
           push: false
-          labels: ${{ steps.metadata.outputs.labels }}
+          index-annotations: ${{ steps.metadata.outputs.labels }}
           sources: |
             ${{ needs.build-linux-amd64.outputs.image-uri }}
             ${{ needs.build-linux-arm64.outputs.image-uri }}
