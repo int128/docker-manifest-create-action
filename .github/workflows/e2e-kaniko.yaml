@@ -66,10 +66,17 @@ jobs:
       - run: yarn package
 
       # run the action
+      - uses: docker/setup-buildx-action@v3.0.0
+      - uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}/e2e
+          flavor: latest=false,suffix=-kaniko
       - name: docker-manifest-create-action (dry-run)
         uses: ./
         with:
           push: false
+          index-annotations: ${{ steps.metadata.outputs.labels }}
           sources: |
             ${{ needs.build-linux-amd64.outputs.image-uri }}
 
@@ -78,15 +85,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
-        id: metadata
-        with:
-          images: ghcr.io/${{ github.repository }}/e2e
-          flavor: latest=false,suffix=-kaniko
       - name: docker-manifest-create-action@v2
         id: build
         uses: ./
         with:
+          index-annotations: ${{ steps.metadata.outputs.labels }}
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
             ${{ needs.build-linux-amd64.outputs.image-uri }}

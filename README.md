@@ -111,6 +111,7 @@ jobs:
       - uses: int128/docker-manifest-create-action@v2
         id: build
         with:
+          index-annotations: ${{ steps.metadata.outputs.labels }}
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
             ghcr.io/${{ github.repository }}@${{ needs.build-linux-amd64.outputs.digest }}
@@ -176,6 +177,7 @@ jobs:
       - uses: int128/docker-manifest-create-action@v2
         id: build
         with:
+          index-annotations: ${{ steps.metadata.outputs.labels }}
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
             ${{ steps.ecr.outputs.registry }}/${{ github.repository }}@${{ needs.build-linux-amd64.outputs.digest }}
@@ -188,13 +190,17 @@ This action requires Docker Buildx.
 
 ### Inputs
 
-| Name      | Default                      | Description                                        |
-| --------- | ---------------------------- | -------------------------------------------------- |
-| `push`    | `true`                       | Push the manifest to the registry                  |
-| `tags`    | (required if `push` is true) | Tags of the destination images (multi-line string) |
-| `sources` | (required)                   | Image URIs of the sources (multi-line string)      |
+| Name                | Default                      | Description                                            |
+| ------------------- | ---------------------------- | ------------------------------------------------------ |
+| `push`              | `true`                       | Push the manifest to the registry                      |
+| `index-annotations` | -                            | Add annotations to the image index (multi-line string) |
+| `tags`              | (required if `push` is true) | Tags of the destination images (multi-line string)     |
+| `sources`           | (required)                   | Image URIs of the sources (multi-line string)          |
 
 If `push` is false, this action runs `docker buildx imagetools create --dry-run`.
+
+If `index-annotations` is set, this action adds `--annotation`.
+See https://docs.docker.com/engine/reference/commandline/buildx_imagetools_create/#annotation for details.
 
 ### Outputs
 
