@@ -6,7 +6,7 @@ on:
       - src/**
       - tests/**
       - '*.json'
-      - action.yaml
+      - '*.yaml'
       - .github/workflows/e2e-docker.yaml
   push:
     branches:
@@ -17,7 +17,7 @@ on:
       - src/**
       - tests/**
       - '*.json'
-      - action.yaml
+      - '*.yaml'
       - .github/workflows/e2e-docker.yaml
 
 jobs:
@@ -51,10 +51,9 @@ jobs:
       - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
           node-version: 20
-          cache: yarn
-      - run: yarn
-      - run: yarn build
-      - run: yarn package
+      - run: corepack enable pnpm
+      - run: pnpm i
+      - run: pnpm build
 
       # run the action
       - uses: docker/setup-buildx-action@0d103c3126aa41d772a8362f6aa67afac040f80c # v3.1.0
