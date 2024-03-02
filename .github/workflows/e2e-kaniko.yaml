@@ -6,7 +6,7 @@ on:
       - src/**
       - tests/**
       - '*.json'
-      - action.yaml
+      - '*.yaml'
       - .github/workflows/e2e-kaniko.yaml
   push:
     branches:
@@ -17,7 +17,7 @@ on:
       - src/**
       - tests/**
       - '*.json'
-      - action.yaml
+      - '*.yaml'
       - .github/workflows/e2e-kaniko.yaml
 
 jobs:
@@ -60,10 +60,9 @@ jobs:
       - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
           node-version: 20
-          cache: yarn
-      - run: yarn
-      - run: yarn build
-      - run: yarn package
+      - run: corepack enable pnpm
+      - run: pnpm i
+      - run: pnpm build
 
       # run the action
       - uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
