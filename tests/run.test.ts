@@ -1,5 +1,5 @@
 import * as exec from '@actions/exec'
-import { run } from '../src/run'
+import { run } from '../src/run.js'
 
 jest.mock('@actions/exec')
 
