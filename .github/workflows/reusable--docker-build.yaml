@@ -43,7 +43,7 @@ jobs:
           images: ${{ inputs.images }}
           # avoid overwriting the latest tag because metadata-action does not add a suffix to it
           flavor: latest=false,suffix=-amd64
-      - uses: int128/docker-build-cache-config-action@1ae274f683e01b2b3eb290167f51590fd7035316 # v1.28.0
+      - uses: int128/docker-build-cache-config-action@0b4582921757b6145fd7fab8156c725b28e1c2b8 # v1.31.0
         id: cache
         with:
           image: ${{ inputs.cache-image }}
