@@ -1,12 +1,13 @@
+import { it, expect, vi, beforeEach } from 'vitest'
 import * as exec from '@actions/exec'
 import { run } from '../src/run.js'
 
-jest.mock('@actions/exec')
+vi.mock('@actions/exec')
 
-beforeEach(() => jest.mocked(exec).exec.mockResolvedValue(0))
+beforeEach(() => vi.mocked(exec).exec.mockResolvedValue(0))
 
 it('should run docker buildx imagetools', async () => {
-  jest.mocked(exec).getExecOutput.mockResolvedValue({
+  vi.mocked(exec).getExecOutput.mockResolvedValue({
     exitCode: 0,
     stdout: '"sha256:f000000000000000000000000000000000000000000000000000000000000000"',
     stderr: '',
@@ -65,7 +66,7 @@ it('should run docker buildx imagetools --dry-run if push is false', async () =>
 })
 
 it('should add annotations', async () => {
-  jest.mocked(exec).getExecOutput.mockResolvedValue({
+  vi.mocked(exec).getExecOutput.mockResolvedValue({
     exitCode: 0,
     stdout: '"sha256:f000000000000000000000000000000000000000000000000000000000000000"',
     stderr: '',
