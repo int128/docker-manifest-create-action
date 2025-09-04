@@ -15,6 +15,14 @@ inputs:
   sources:
     description: Image URIs of the sources (multi-line string)
     required: true
+  maxRetries:
+    description: Max number of retries for `docker imagetools inspect`
+    required: false
+    default: '5'
+  baseDelay:
+    description: Initial delay in milliseconds for exponetial backoff
+    required: false
+    default: '2000'
 
 outputs:
   digest:
