@@ -196,6 +196,8 @@ This action requires Docker Buildx.
 | `index-annotations` | -                            | Add annotations to the image index (multi-line string) |
 | `tags`              | (required if `push` is true) | Tags of the destination images (multi-line string)     |
 | `sources`           | (required)                   | Image URIs of the sources (multi-line string)          |
+| `maxRetries`        | 5                            | Max number of retries for `docker imagetools inspect`  |
+| `baseDelay`         | 2000                         | Initial delay in milliseconds for exponetial backoff   |
 
 If `push` is false, this action runs `docker buildx imagetools create --dry-run`.
 
