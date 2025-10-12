@@ -26,7 +26,7 @@ it('should run docker buildx imagetools', async () => {
     digest: 'sha256:f000000000000000000000000000000000000000000000000000000000000000',
   })
 
-  expect(exec.exec).toHaveBeenCalledWith('docker', [
+  expect(exec.exec).toHaveBeenCalledExactlyOnceWith('docker', [
     'buildx',
     'imagetools',
     'create',
@@ -35,7 +35,7 @@ it('should run docker buildx imagetools', async () => {
     'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
     'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000001',
   ])
-  expect(exec.exec).toHaveBeenCalledWith('docker', [
+  expect(exec.exec).toHaveBeenCalledExactlyOnceWith('docker', [
     'buildx',
     'imagetools',
     'inspect',
@@ -55,7 +55,7 @@ it('should run docker buildx imagetools --dry-run if push is false', async () =>
   })
   expect(outputs).toStrictEqual({ digest: undefined })
 
-  expect(exec.exec).toHaveBeenCalledWith('docker', [
+  expect(exec.exec).toHaveBeenCalledExactlyOnceWith('docker', [
     'buildx',
     'imagetools',
     'create',
@@ -87,7 +87,7 @@ it('should add annotations', async () => {
     digest: 'sha256:f000000000000000000000000000000000000000000000000000000000000000',
   })
 
-  expect(exec.exec).toHaveBeenCalledWith('docker', [
+  expect(exec.exec).toHaveBeenCalledExactlyOnceWith('docker', [
     'buildx',
     'imagetools',
     'create',
@@ -99,7 +99,7 @@ it('should add annotations', async () => {
     'ghcr.io/int128/docker-manifest-create-action:main',
     'ghcr.io/int128/docker-manifest-create-action@sha256:0000000000000000000000000000000000000000000000000000000000000000',
   ])
-  expect(exec.exec).toHaveBeenCalledWith('docker', [
+  expect(exec.exec).toHaveBeenCalledExactlyOnceWith('docker', [
     'buildx',
     'imagetools',
     'inspect',
