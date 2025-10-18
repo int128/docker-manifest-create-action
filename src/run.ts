@@ -1,4 +1,4 @@
-import assert from 'assert'
+import assert from 'node:assert'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 

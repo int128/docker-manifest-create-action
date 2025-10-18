@@ -1,5 +1,5 @@
-import { it, expect, vi, beforeEach } from 'vitest'
 import * as exec from '@actions/exec'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { run } from '../src/run.js'
 
 vi.mock('@actions/exec')
