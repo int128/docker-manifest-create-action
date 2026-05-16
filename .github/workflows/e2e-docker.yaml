@@ -21,7 +21,15 @@ on:
       - .github/workflows/e2e-docker.yaml
 
 jobs:
+  # Skip the build if triggered by a forked repository, because it cannot push the image to the registry.
+  skip-if-fork:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-slim
+    steps:
+      - run: exit 0
+
   build-linux-amd64:
+    needs: skip-if-fork
     uses: ./.github/workflows/reusable--docker-build.yaml
     with:
       images: ghcr.io/${{ github.repository }}/e2e
@@ -30,6 +38,7 @@ jobs:
       platforms: linux/amd64
 
   build-linux-arm64:
+    needs: skip-if-fork
     uses: ./.github/workflows/reusable--docker-build.yaml
     with:
       images: ghcr.io/${{ github.repository }}/e2e

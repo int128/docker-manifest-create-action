@@ -21,7 +21,15 @@ on:
       - .github/workflows/e2e-kaniko.yaml
 
 jobs:
+  # Skip the build if triggered by a forked repository, because it cannot push the image to the registry.
+  skip-if-fork:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-slim
+    steps:
+      - run: exit 0
+
   build-linux-amd64:
+    needs: skip-if-fork
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
