@@ -47,7 +47,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}/e2e
           # avoid overwriting the latest tag because metadata-action does not add a suffix to it
           flavor: latest=false,suffix=-kaniko-amd64
-      - uses: int128/kaniko-action@56c20b6005e52f650d9d6cbf58f7bf7f8e0184bb # v1.62.0
+      - uses: int128/kaniko-action@d018e2f85131120444662f019b17e017b2545e69 # v1.63.0
         id: build
         with:
           push: true
