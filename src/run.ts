@@ -7,6 +7,8 @@ type Inputs = {
   indexAnnotations: string[]
   tags: string[]
   sources: string[]
+  maxRetries: number
+  baseDelay: number
 }
 
 type Outputs = {
@@ -27,7 +29,7 @@ export const run = async (inputs: Inputs): Promise<Outputs> => {
   for (const tag of inputs.tags) {
     await createManifest(tag, inputs.sources, inputs.indexAnnotations)
   }
-  const digest = await getDigest(inputs.tags[0])
+  const digest = await getDigest(inputs.tags[0], inputs.maxRetries, inputs.baseDelay)
   return { digest }
 }
 
@@ -62,14 +64,26 @@ const toAnnotationFlags = (indexAnnotations: string[]): string[] =>
     `index:${a}`,
   ])
 
-const getDigest = async (tag: string): Promise<string> => {
-  const { stdout } = await exec.getExecOutput('docker', [
-    'buildx',
-    'imagetools',
-    'inspect',
-    '--format',
-    '{{json .Manifest.Digest}}',
-    tag,
-  ])
-  return stdout.replace(/^"|"$/g, '')
+const getDigest = async (tag: string, maxRetries = 5, baseDelay = 2000): Promise<string> => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const { stdout } = await exec.getExecOutput('docker', [
+        'buildx',
+        'imagetools',
+        'inspect',
+        '--format',
+        '{{json .Manifest.Digest}}',
+        tag,
+      ])
+      return stdout.replace(/^"|"$/g, '')
+    } catch (err) {
+      if (attempt === maxRetries) {
+        throw err
+      }
+      const delay = baseDelay * Math.pow(2, attempt - 1)
+      core.info(`Retry ${attempt}/${maxRetries} failed. Waiting ${delay}ms...`)
+      await new Promise(res => setTimeout(res, delay))
+    }
+  }
+  throw new Error(`Failed to inspect image digest for ${tag}`)
 }
